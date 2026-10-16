@@ -1,0 +1,882 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <meta name="description" content="ATLAS — seu assistente pessoal.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>ATLAS — Assistente Pessoal</title>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d12;
+      --panel: #131722;
+      --panel2: #191f2b;
+      --text: #edf1f8;
+      --muted: #929bad;
+      --line: #2a3140;
+      --accent: #9db8ff;
+      --danger: #ff8f9b;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 10px 13px;
+      color: var(--text);
+      background: var(--panel2);
+    }
+
+    button:hover { border-color: var(--accent); }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    textarea { min-height: 110px; resize: vertical; }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: 1.6rem; margin-bottom: 4px; }
+    h2 { font-size: 1.35rem; }
+    h3 { font-size: 1rem; }
+    .muted { color: var(--muted); }
+    .small { font-size: .86rem; }
+    .eyebrow {
+      color: var(--accent);
+      letter-spacing: .16em;
+      font-size: .72rem;
+      font-weight: 700;
+    }
+
+    header {
+      padding: 24px 18px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-inner, main, nav {
+      width: min(100% - 28px, 1000px);
+      margin-inline: auto;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      padding: 14px 0;
+      overflow-x: auto;
+    }
+
+    nav button { flex-shrink: 0; }
+    nav button.active {
+      background: var(--accent);
+      color: #101522;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    main { padding: 10px 0 48px; }
+    .page { display: block; }
+    .hidden { display: none !important; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+    }
+
+    .panel, .stat, .item {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .section { margin-top: 14px; }
+    .stat-number { font-size: 1.9rem; font-weight: 750; }
+    .stack { display: grid; gap: 10px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .row h2, .row h3 { margin-bottom: 0; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    label { display: grid; gap: 6px; font-size: .9rem; }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #101522;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    .danger { color: var(--danger); }
+    .item p:last-child { margin-bottom: 0; }
+    .item-main { min-width: 0; overflow-wrap: anywhere; }
+    .item ul { padding-left: 20px; }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check-row input { width: auto; }
+    .task-done { opacity: .6; }
+    .task-done strong { text-decoration: line-through; }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 18px;
+      font-size: .8rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="header-inner">
+      <p class="eyebrow">PERSONAL INTELLIGENCE SYSTEM</p>
+      <h1>ATLAS</h1>
+      <p class="muted">Seu assistente pessoal, organizado em um só lugar.</p>
+    </div>
+  </header>
+
+  <nav aria-label="Navegação principal">
+    <button data-page="dashboard" class="active">Painel</button>
+    <button data-page="projects">Projetos</button>
+    <button data-page="tasks">Tarefas</button>
+    <button data-page="memory">Memória</button>
+    <button data-page="briefing">Briefing diário</button>
+    <button data-page="settings">Configurações</button>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="page">
+      <p class="eyebrow">VISÃO GERAL</p>
+      <h2>Painel principal</h2>
+      <p id="welcomeDate" class="muted"></p>
+
+      <div class="grid">
+        <div class="stat">
+          <p class="muted small">Projetos</p>
+          <div class="stat-number" id="statProjects">0</div>
+        </div>
+        <div class="stat">
+          <p class="muted small">Tarefas pendentes</p>
+          <div class="stat-number" id="statTasks">0</div>
+        </div>
+        <div class="stat">
+          <p class="muted small">Tarefas concluídas</p>
+          <div class="stat-number" id="statDone">0</div>
+        </div>
+        <div class="stat">
+          <p class="muted small">Anotações</p>
+          <div class="stat-number" id="statMemory">0</div>
+        </div>
+      </div>
+
+      <div class="panel section">
+        <div class="row">
+          <h3>Próximas prioridades</h3>
+          <button data-go="tasks">Ver tarefas</button>
+        </div>
+        <div id="dashboardTasks" class="stack section"></div>
+      </div>
+
+      <div class="panel section">
+        <div class="row">
+          <h3>Acesso rápido</h3>
+        </div>
+        <div class="actions">
+          <button data-go="projects">Novo projeto</button>
+          <button data-go="tasks">Organizar tarefas</button>
+          <button data-go="briefing">Abrir briefing</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="page hidden">
+      <p class="eyebrow">PLANEJAMENTO</p>
+      <h2>Projetos</h2>
+
+      <form id="projectForm" class="panel">
+        <h3>Novo projeto</h3>
+        <label>
+          Nome
+          <input id="projectName" maxlength="100"
+            placeholder="Ex.: Criar meu RPG" required>
+        </label>
+        <label class="section">
+          Descrição
+          <textarea id="projectDescription" maxlength="1000"
+            placeholder="Objetivo e detalhes do projeto"></textarea>
+        </label>
+        <div class="actions">
+          <button class="primary" type="submit">Adicionar projeto</button>
+        </div>
+      </form>
+
+      <div id="projectsList" class="stack section"></div>
+    </section>
+
+    <section id="tasks" class="page hidden">
+      <p class="eyebrow">EXECUÇÃO</p>
+      <h2>Tarefas</h2>
+
+      <form id="taskForm" class="panel">
+        <h3>Nova tarefa</h3>
+        <div class="form-grid">
+          <label>
+            Tarefa
+            <input id="taskTitle" maxlength="150"
+              placeholder="O que precisa ser feito?" required>
+          </label>
+          <label>
+            Prioridade
+            <select id="taskPriority">
+              <option value="high">Alta</option>
+              <option value="medium" selected>Média</option>
+              <option value="low">Baixa</option>
+            </select>
+          </label>
+          <label>
+            Prazo
+            <input id="taskDue" type="date">
+          </label>
+          <label>
+            Projeto
+            <select id="taskProject">
+              <option value="">Sem projeto</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit">Adicionar tarefa</button>
+        </div>
+      </form>
+
+      <div class="panel section">
+        <div class="row">
+          <h3>Lista de tarefas</h3>
+          <select id="taskFilter" aria-label="Filtrar tarefas" style="width:auto">
+            <option value="open">Pendentes</option>
+            <option value="all">Todas</option>
+            <option value="done">Concluídas</option>
+          </select>
+        </div>
+        <div id="tasksList" class="stack section"></div>
+      </div>
+    </section>
+
+    <section id="memory" class="page hidden">
+      <p class="eyebrow">MEMÓRIA LOCAL</p>
+      <h2>Anotações</h2>
+      <p class="muted">Guarde ideias, informações e lembretes importantes.</p>
+
+      <form id="memoryForm" class="panel">
+        <label>
+          Título
+          <input id="memoryTitle" maxlength="120"
+            placeholder="Título da anotação" required>
+        </label>
+        <label class="section">
+          Conteúdo
+          <textarea id="memoryContent" maxlength="10000"
+            placeholder="Escreva aqui..." required></textarea>
+        </label>
+        <div class="actions">
+          <button class="primary" type="submit">Salvar anotação</button>
+        </div>
+      </form>
+
+      <div id="memoryList" class="stack section"></div>
+    </section>
+
+    <section id="briefing" class="page hidden">
+      <p class="eyebrow">ATLAS INTELLIGENCE</p>
+      <h2>Briefing diário</h2>
+      <p class="muted">Uma visão rápida das prioridades e dos compromissos registrados.</p>
+
+      <div class="panel section">
+        <div class="row">
+          <h3>Resumo pessoal</h3>
+          <button id="refreshBriefing" class="primary">Atualizar</button>
+        </div>
+        <div id="briefingTasks" class="stack section"></div>
+      </div>
+
+      <div class="panel section">
+        <h3>Agenda e acontecimentos</h3>
+        <p class="muted small">
+          Registre compromissos, notícias ou assuntos para acompanhar.
+          Esta versão não busca notícias automaticamente.
+        </p>
+        <textarea id="briefingNotes" maxlength="5000"
+          placeholder="Compromissos e informações importantes..."></textarea>
+        <div class="actions">
+          <button id="saveBriefingNotes" class="primary">Salvar anotações</button>
+        </div>
+      </div>
+
+      <div class="panel section">
+        <h3>Notificações</h3>
+        <p class="muted small">
+          O ATLAS pode mostrar um aviso quando for aberto, se as notificações
+          forem permitidas pelo navegador. Isso não agenda avisos com o app fechado.
+        </p>
+        <button id="enableNotifications">Ativar notificações</button>
+        <p id="notificationStatus" class="muted small section" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="settings" class="page hidden">
+      <p class="eyebrow">SISTEMA</p>
+      <h2>Configurações</h2>
+
+      <div class="panel">
+        <h3>Backup dos dados</h3>
+        <p class="muted small">
+          Exporte seus dados para um arquivo JSON ou importe um backup anterior.
+          Guarde o arquivo em um local seguro.
+        </p>
+        <div class="actions">
+          <button id="exportData" class="primary">Exportar backup</button>
+          <button id="importButton">Importar backup</button>
+          <input id="importFile" type="file" accept=".json,application/json"
+            class="hidden">
+        </div>
+      </div>
+
+      <div class="panel section">
+        <h3>Sobre o ATLAS</h3>
+        <p class="muted small">
+          Os dados ficam armazenados neste navegador. Limpar os dados do site
+          pode apagá-los; faça backups regularmente.
+        </p>
+        <p class="muted small">Versão 1.1 — Briefing diário</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>ATLAS · Assistente pessoal</footer>
+
+  <script>
+    "use strict";
+
+    const DB_KEY = "atlas_pwa_v1";
+    const BRIEFING_KEY = "atlas_briefing_v1";
+
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => [...document.querySelectorAll(selector)];
+
+    function loadDB() {
+      try {
+        const data = JSON.parse(localStorage.getItem(DB_KEY) || "{}");
+        return {
+          projects: Array.isArray(data.projects) ? data.projects : [],
+          tasks: Array.isArray(data.tasks) ? data.tasks : [],
+          memory: Array.isArray(data.memory) ? data.memory : []
+        };
+      } catch {
+        return { projects: [], tasks: [], memory: [] };
+      }
+    }
+
+    let db = loadDB();
+
+    function saveDB() {
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      render();
+    }
+
+    function uid() {
+      return Date.now().toString(36) +
+        Math.random().toString(36).slice(2, 8);
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function dateLabel(value) {
+      if (!value) return "Sem prazo";
+      const parts = value.split("-").map(Number);
+      if (parts.length !== 3 || parts.some(Number.isNaN)) return value;
+      return new Date(parts[0], parts[1] - 1, parts[2])
+        .toLocaleDateString("pt-BR");
+    }
+
+    function todayString() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+    }
+
+    function priorityLabel(priority) {
+      return ({
+        high: "Alta",
+        medium: "Média",
+        low: "Baixa"
+      })[priority] || "Média";
+    }
+
+    function projectName(id) {
+      const project = db.projects.find(item => item.id === id);
+      return project ? project.name : "Sem projeto";
+    }
+
+    function go(page) {
+      $$(".page").forEach(section => {
+        section.classList.toggle("hidden", section.id !== page);
+      });
+
+      $$("nav [data-page]").forEach(button => {
+        button.classList.toggle("active", button.dataset.page === page);
+      });
+
+      if (page === "briefing") renderBriefing();
+    }
+
+    $$("nav [data-page]").forEach(button => {
+      button.addEventListener("click", () => go(button.dataset.page));
+    });
+
+    $$("[data-go]").forEach(button => {
+      button.addEventListener("click", () => go(button.dataset.go));
+    });
+
+    function renderDashboard() {
+      const pending = db.tasks.filter(task => !task.done);
+      $("#statProjects").textContent = db.projects.length;
+      $("#statTasks").textContent = pending.length;
+      $("#statDone").textContent = db.tasks.filter(task => task.done).length;
+      $("#statMemory").textContent = db.memory.length;
+      $("#welcomeDate").textContent =
+        new Date().toLocaleDateString("pt-BR", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric"
+        });
+
+      const sorted = [...pending].sort((a, b) => {
+        const priority = { high: 0, medium: 1, low: 2 };
+        return priority[a.priority] - priority[b.priority] ||
+          (a.due || "9999").localeCompare(b.due || "9999");
+      }).slice(0, 5);
+
+      $("#dashboardTasks").innerHTML = sorted.length
+        ? sorted.map(task => `
+          <div class="item">
+            <strong>${esc(task.title)}</strong>
+            <p class="muted small">
+              Prioridade ${esc(priorityLabel(task.priority))} ·
+              ${esc(dateLabel(task.due))}
+            </p>
+          </div>
+        `).join("")
+        : '<p class="muted small">Nenhuma tarefa pendente. Tudo em ordem.</p>';
+    }
+
+    function renderProjects() {
+      $("#projectsList").innerHTML = db.projects.length
+        ? db.projects.map(project => `
+          <div class="item">
+            <div class="row">
+              <div class="item-main">
+                <strong>${esc(project.name)}</strong>
+                <p class="muted small">${esc(project.description || "Sem descrição")}</p>
+              </div>
+              <button class="danger" data-delete-project="${esc(project.id)}">
+                Excluir
+              </button>
+            </div>
+          </div>
+        `).join("")
+        : '<p class="muted">Nenhum projeto cadastrado.</p>';
+
+      $("#taskProject").innerHTML =
+        '<option value="">Sem projeto</option>' +
+        db.projects.map(project =>
+          `<option value="${esc(project.id)}">${esc(project.name)}</option>`
+        ).join("");
+    }
+
+    function renderTasks() {
+      const filter = $("#taskFilter").value;
+      let tasks = [...db.tasks];
+
+      if (filter === "open") tasks = tasks.filter(task => !task.done);
+      if (filter === "done") tasks = tasks.filter(task => task.done);
+
+      const priority = { high: 0, medium: 1, low: 2 };
+      tasks.sort((a, b) => Number(a.done) - Number(b.done) ||
+        priority[a.priority] - priority[b.priority] ||
+        (a.due || "9999").localeCompare(b.due || "9999"));
+
+      $("#tasksList").innerHTML = tasks.length
+        ? tasks.map(task => `
+          <div class="item ${task.done ? "task-done" : ""}">
+            <div class="row">
+              <label class="check-row item-main">
+                <input type="checkbox" data-toggle-task="${esc(task.id)}"
+                  ${task.done ? "checked" : ""}>
+                <strong>${esc(task.title)}</strong>
+              </label>
+              <button class="danger" data-delete-task="${esc(task.id)}">
+                Excluir
+              </button>
+            </div>
+            <p class="muted small">
+              Prioridade ${esc(priorityLabel(task.priority))} ·
+              Prazo: ${esc(dateLabel(task.due))} ·
+              Projeto: ${esc(projectName(task.projectId))}
+            </p>
+          </div>
+        `).join("")
+        : '<p class="muted">Nenhuma tarefa nesta lista.</p>';
+    }
+
+    function renderMemory() {
+      $("#memoryList").innerHTML = db.memory.length
+        ? [...db.memory].reverse().map(note => `
+          <div class="item">
+            <div class="row">
+              <strong>${esc(note.title)}</strong>
+              <button class="danger" data-delete-memory="${esc(note.id)}">
+                Excluir
+              </button>
+            </div>
+            <p>${esc(note.content).replace(/\n/g, "<br>")}</p>
+            <p class="muted small">
+              Atualizada em ${esc(new Date(note.updatedAt).toLocaleString("pt-BR"))}
+            </p>
+          </div>
+        `).join("")
+        : '<p class="muted">Nenhuma anotação salva.</p>';
+    }
+
+    function renderBriefing() {
+      const open = db.tasks.filter(task => !task.done);
+      const today = todayString();
+
+      const high = open.filter(task => task.priority === "high");
+      const overdue = open.filter(task => task.due && task.due < today);
+      const dueToday = open.filter(task => task.due === today);
+
+      const sections = [
+        {
+          title: "Prioridades altas",
+          items: high.map(task => task.title)
+        },
+        {
+          title: "Prazos vencidos",
+          items: overdue.map(task =>
+            `${task.title} — prazo ${dateLabel(task.due)}`)
+        },
+        {
+          title: "Prazos de hoje",
+          items: dueToday.map(task => task.title)
+        },
+        {
+          title: "Projetos cadastrados",
+          items: db.projects.map(project => project.name)
+        }
+      ];
+
+      $("#briefingTasks").innerHTML = sections.map(section => `
+        <div class="item">
+          <strong>${esc(section.title)}</strong>
+          ${section.items.length
+            ? `<ul>${section.items.map(item => `<li>${esc(item)}</li>`).join("")}</ul>`
+            : '<p class="muted small">Nenhum item identificado.</p>'}
+        </div>
+      `).join("");
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(BRIEFING_KEY) || "{}");
+        $("#briefingNotes").value = saved.notes || "";
+      } catch {
+        $("#briefingNotes").value = "";
+      }
+    }
+
+    function render() {
+      renderDashboard();
+      renderProjects();
+      renderTasks();
+      renderMemory();
+      renderBriefing();
+    }
+
+    $("#projectForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      db.projects.push({
+        id: uid(),
+        name: $("#projectName").value.trim(),
+        description: $("#projectDescription").value.trim(),
+        createdAt: new Date().toISOString()
+      });
+
+      $("#projectForm").reset();
+      saveDB();
+    });
+
+    $("#taskForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      db.tasks.push({
+        id: uid(),
+        title: $("#taskTitle").value.trim(),
+        priority: $("#taskPriority").value,
+        due: $("#taskDue").value,
+        projectId: $("#taskProject").value,
+        done: false,
+        createdAt: new Date().toISOString()
+      });
+
+      $("#taskForm").reset();
+      $("#taskPriority").value = "medium";
+      saveDB();
+    });
+
+    $("#memoryForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      db.memory.push({
+        id: uid(),
+        title: $("#memoryTitle").value.trim(),
+        content: $("#memoryContent").value.trim(),
+        updatedAt: new Date().toISOString()
+      });
+
+      $("#memoryForm").reset();
+      saveDB();
+    });
+
+    $("#taskFilter").addEventListener("change", renderTasks);
+    $("#refreshBriefing").addEventListener("click", renderBriefing);
+
+    $("#saveBriefingNotes").addEventListener("click", () => {
+      localStorage.setItem(BRIEFING_KEY, JSON.stringify({
+        notes: $("#briefingNotes").value,
+        updatedAt: new Date().toISOString()
+      }));
+      alert("Anotações do briefing salvas.");
+    });
+
+    document.addEventListener("change", event => {
+      const toggleId = event.target.dataset.toggleTask;
+      if (toggleId) {
+        const task = db.tasks.find(item => item.id === toggleId);
+        if (task) {
+          task.done = event.target.checked;
+          saveDB();
+        }
+      }
+    });
+
+    document.addEventListener("click", event => {
+      const projectId = event.target.dataset.deleteProject;
+      const taskId = event.target.dataset.deleteTask;
+      const memoryId = event.target.dataset.deleteMemory;
+
+      if (projectId && confirm("Excluir este projeto?")) {
+        db.projects = db.projects.filter(item => item.id !== projectId);
+        db.tasks.forEach(task => {
+          if (task.projectId === projectId) task.projectId = "";
+        });
+        saveDB();
+      }
+
+      if (taskId && confirm("Excluir esta tarefa?")) {
+        db.tasks = db.tasks.filter(item => item.id !== taskId);
+        saveDB();
+      }
+
+      if (memoryId && confirm("Excluir esta anotação?")) {
+        db.memory = db.memory.filter(item => item.id !== memoryId);
+        saveDB();
+      }
+    });
+
+    $("#enableNotifications").addEventListener("click", async () => {
+      if (!("Notification" in window)) {
+        $("#notificationStatus").textContent =
+          "Este navegador não oferece suporte a notificações.";
+        return;
+      }
+
+      try {
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+          $("#notificationStatus").textContent =
+            "Permissão concedida. O ATLAS poderá mostrar avisos quando for aberto.";
+          new Notification("ATLAS", {
+            body: "Notificações ativadas. Seu briefing está disponível."
+          });
+        } else {
+          $("#notificationStatus").textContent =
+            "Permissão não concedida. Verifique as configurações do navegador.";
+        }
+      } catch {
+        $("#notificationStatus").textContent =
+          "Não foi possível ativar notificações neste navegador.";
+      }
+    });
+
+    function notifyBriefingOnOpen() {
+      if (!("Notification" in window) ||
+          Notification.permission !== "granted") return;
+
+      const today = todayString();
+      if (localStorage.getItem("atlas_last_briefing_notice") === today) return;
+
+      const pending = db.tasks.filter(task => !task.done).length;
+
+      try {
+        new Notification("ATLAS — Briefing diário", {
+          body: `Você tem ${pending} tarefa(s) pendente(s). Consulte suas prioridades.`
+        });
+        localStorage.setItem("atlas_last_briefing_notice", today);
+      } catch {
+        // Alguns navegadores restringem notificações da página.
+      }
+    }
+
+    $("#exportData").addEventListener("click", () => {
+      const backup = {
+        app: "ATLAS",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        db,
+        briefing: JSON.parse(localStorage.getItem(BRIEFING_KEY) || "{}")
+      };
+
+      const blob = new Blob(
+        [JSON.stringify(backup, null, 2)],
+        { type: "application/json" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `atlas-backup-${todayString()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    $("#importButton").addEventListener("click", () => $("#importFile").click());
+
+    $("#importFile").addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const imported = JSON.parse(await file.text());
+        const candidate = imported.db || imported;
+
+        if (!candidate ||
+            !Array.isArray(candidate.projects) ||
+            !Array.isArray(candidate.tasks) ||
+            !Array.isArray(candidate.memory)) {
+          throw new Error("Formato de backup inválido.");
+        }
+
+        if (!confirm("Importar este backup substituirá os dados atuais. Continuar?")) {
+          event.target.value = "";
+          return;
+        }
+
+        db = {
+          projects: candidate.projects,
+          tasks: candidate.tasks,
+          memory: candidate.memory
+        };
+
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+        if (imported.briefing) {
+          localStorage.setItem(BRIEFING_KEY, JSON.stringify(imported.briefing));
+        }
+
+        render();
+        alert("Backup importado com sucesso.");
+      } catch (error) {
+        alert("Não foi possível importar o arquivo: " + error.message);
+      }
+
+      event.target.value = "";
+    });
+
+    render();
+    notifyBriefingOnOpen();
+
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(error => {
+          console.warn("Service Worker não foi registrado:", error);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
