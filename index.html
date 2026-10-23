@@ -47,6 +47,7 @@
     }
 
     button:hover { border-color: var(--accent); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
 
     input, select, textarea {
       width: 100%;
@@ -70,6 +71,7 @@
     h3 { font-size: 1rem; }
     .muted { color: var(--muted); }
     .small { font-size: .86rem; }
+
     .eyebrow {
       color: var(--accent);
       letter-spacing: .16em;
@@ -95,6 +97,7 @@
     }
 
     nav button { flex-shrink: 0; }
+
     nav button.active {
       background: var(--accent);
       color: #101522;
@@ -123,6 +126,7 @@
     .section { margin-top: 14px; }
     .stat-number { font-size: 1.9rem; font-weight: 750; }
     .stack { display: grid; gap: 10px; }
+
     .row {
       display: flex;
       align-items: center;
@@ -132,6 +136,7 @@
     }
 
     .row h2, .row h3 { margin-bottom: 0; }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -139,6 +144,7 @@
     }
 
     label { display: grid; gap: 6px; font-size: .9rem; }
+
     .actions {
       display: flex;
       gap: 8px;
@@ -156,7 +162,9 @@
     .danger { color: var(--danger); }
     .item p:last-child { margin-bottom: 0; }
     .item-main { min-width: 0; overflow-wrap: anywhere; }
+
     .item ul { padding-left: 20px; }
+
     .badge {
       display: inline-block;
       padding: 3px 8px;
@@ -175,6 +183,73 @@
     .check-row input { width: auto; }
     .task-done { opacity: .6; }
     .task-done strong { text-decoration: line-through; }
+
+    /* Interface de conversa do ATLAS */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 55vh;
+      max-height: 72vh;
+    }
+
+    .chat-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      padding: 16px 2px;
+      flex: 1;
+      min-height: 220px;
+      overscroll-behavior: contain;
+    }
+
+    .chat-message {
+      max-width: 90%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .chat-message.user {
+      align-self: flex-end;
+      background: #202b42;
+      border-color: #384967;
+    }
+
+    .chat-message.assistant {
+      align-self: flex-start;
+      background: var(--panel2);
+    }
+
+    .chat-message.system {
+      align-self: center;
+      max-width: 100%;
+      color: var(--muted);
+      font-size: .85rem;
+      border-style: dashed;
+    }
+
+    .chat-composer {
+      display: grid;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .chat-composer textarea {
+      min-height: 76px;
+      max-height: 180px;
+      resize: vertical;
+    }
+
+    .chat-status {
+      min-height: 20px;
+      margin: 0;
+      color: var(--muted);
+      font-size: .85rem;
+    }
 
     footer {
       text-align: center;
@@ -196,6 +271,7 @@
 
   <nav aria-label="Navegação principal">
     <button data-page="dashboard" class="active">Painel</button>
+    <button data-page="chat">Conversa</button>
     <button data-page="projects">Projetos</button>
     <button data-page="tasks">Tarefas</button>
     <button data-page="memory">Memória</button>
@@ -204,6 +280,7 @@
   </nav>
 
   <main>
+    <!-- PAINEL -->
     <section id="dashboard" class="page">
       <p class="eyebrow">VISÃO GERAL</p>
       <h2>Painel principal</h2>
@@ -244,10 +321,53 @@
           <button data-go="projects">Novo projeto</button>
           <button data-go="tasks">Organizar tarefas</button>
           <button data-go="briefing">Abrir briefing</button>
+          <button data-go="chat">Conversar com ATLAS</button>
         </div>
       </div>
     </section>
 
+    <!-- CONVERSA COM A IA -->
+    <section id="chat" class="page hidden">
+      <p class="eyebrow">ATLAS INTELLIGENCE</p>
+      <h2>Conversa com o ATLAS</h2>
+      <p class="muted">
+        Seu assistente pessoal conectado à inteligência artificial.
+      </p>
+
+      <div class="panel chat-panel">
+        <div class="row">
+          <strong>ATLAS AI</strong>
+          <button id="clearChat" type="button">Limpar conversa</button>
+        </div>
+
+        <div
+          id="chatMessages"
+          class="chat-messages"
+          role="log"
+          aria-live="polite"
+          aria-label="Mensagens da conversa"
+        ></div>
+
+        <form id="chatForm" class="chat-composer">
+          <label for="chatInput">Sua mensagem</label>
+          <textarea
+            id="chatInput"
+            maxlength="8000"
+            placeholder="Como posso ajudar?"
+            required
+          ></textarea>
+
+          <div class="row">
+            <p id="chatStatus" class="chat-status" aria-live="polite"></p>
+            <button id="chatSend" class="primary" type="submit">
+              Enviar
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- PROJETOS -->
     <section id="projects" class="page hidden">
       <p class="eyebrow">PLANEJAMENTO</p>
       <h2>Projetos</h2>
@@ -272,6 +392,7 @@
       <div id="projectsList" class="stack section"></div>
     </section>
 
+    <!-- TAREFAS -->
     <section id="tasks" class="page hidden">
       <p class="eyebrow">EXECUÇÃO</p>
       <h2>Tarefas</h2>
@@ -321,6 +442,7 @@
       </div>
     </section>
 
+    <!-- MEMÓRIA LOCAL -->
     <section id="memory" class="page hidden">
       <p class="eyebrow">MEMÓRIA LOCAL</p>
       <h2>Anotações</h2>
@@ -345,10 +467,13 @@
       <div id="memoryList" class="stack section"></div>
     </section>
 
+    <!-- BRIEFING -->
     <section id="briefing" class="page hidden">
       <p class="eyebrow">ATLAS INTELLIGENCE</p>
       <h2>Briefing diário</h2>
-      <p class="muted">Uma visão rápida das prioridades e dos compromissos registrados.</p>
+      <p class="muted">
+        Uma visão rápida das prioridades e dos compromissos registrados.
+      </p>
 
       <div class="panel section">
         <div class="row">
@@ -382,6 +507,7 @@
       </div>
     </section>
 
+    <!-- CONFIGURAÇÕES -->
     <section id="settings" class="page hidden">
       <p class="eyebrow">SISTEMA</p>
       <h2>Configurações</h2>
@@ -406,7 +532,7 @@
           Os dados ficam armazenados neste navegador. Limpar os dados do site
           pode apagá-los; faça backups regularmente.
         </p>
-        <p class="muted small">Versão 1.1 — Briefing diário</p>
+        <p class="muted small">Versão 1.2 — Conversa com IA</p>
       </div>
     </section>
   </main>
@@ -494,6 +620,10 @@
       });
 
       if (page === "briefing") renderBriefing();
+      if (page === "chat") {
+        renderChatHistory();
+        if (!chatBusy) chatInput.focus();
+      }
     }
 
     $$("nav [data-page]").forEach(button => {
@@ -668,9 +798,12 @@
     $("#projectForm").addEventListener("submit", event => {
       event.preventDefault();
 
+      const name = $("#projectName").value.trim();
+      if (!name) return;
+
       db.projects.push({
         id: uid(),
-        name: $("#projectName").value.trim(),
+        name,
         description: $("#projectDescription").value.trim(),
         createdAt: new Date().toISOString()
       });
@@ -682,9 +815,12 @@
     $("#taskForm").addEventListener("submit", event => {
       event.preventDefault();
 
+      const title = $("#taskTitle").value.trim();
+      if (!title) return;
+
       db.tasks.push({
         id: uid(),
-        title: $("#taskTitle").value.trim(),
+        title,
         priority: $("#taskPriority").value,
         due: $("#taskDue").value,
         projectId: $("#taskProject").value,
@@ -700,10 +836,14 @@
     $("#memoryForm").addEventListener("submit", event => {
       event.preventDefault();
 
+      const title = $("#memoryTitle").value.trim();
+      const content = $("#memoryContent").value.trim();
+      if (!title || !content) return;
+
       db.memory.push({
         id: uid(),
-        title: $("#memoryTitle").value.trim(),
-        content: $("#memoryContent").value.trim(),
+        title,
+        content,
         updatedAt: new Date().toISOString()
       });
 
@@ -734,9 +874,16 @@
     });
 
     document.addEventListener("click", event => {
-      const projectId = event.target.dataset.deleteProject;
-      const taskId = event.target.dataset.deleteTask;
-      const memoryId = event.target.dataset.deleteMemory;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const projectButton = target.closest("[data-delete-project]");
+      const taskButton = target.closest("[data-delete-task]");
+      const memoryButton = target.closest("[data-delete-memory]");
+
+      const projectId = projectButton?.dataset.deleteProject;
+      const taskId = taskButton?.dataset.deleteTask;
+      const memoryId = memoryButton?.dataset.deleteMemory;
 
       if (projectId && confirm("Excluir este projeto?")) {
         db.projects = db.projects.filter(item => item.id !== projectId);
@@ -770,6 +917,7 @@
         if (permission === "granted") {
           $("#notificationStatus").textContent =
             "Permissão concedida. O ATLAS poderá mostrar avisos quando for aberto.";
+
           new Notification("ATLAS", {
             body: "Notificações ativadas. Seu briefing está disponível."
           });
@@ -802,13 +950,220 @@
       }
     }
 
+    /* CONVERSA COM A API DO CLOUDFLARE WORKERS */
+    const ATLAS_API_URL =
+      "https://atlas-ai-api.leo-77690-m.workers.dev/chat";
+
+    const CHAT_KEY = "atlas_chat_history_v1";
+    const CHAT_MAX_MESSAGES = 40;
+
+    let chatHistory = [];
+    let chatBusy = false;
+
+    try {
+      const savedChat = JSON.parse(
+        localStorage.getItem(CHAT_KEY) || "[]"
+      );
+
+      if (Array.isArray(savedChat)) {
+        chatHistory = savedChat
+          .filter(message =>
+            message &&
+            ["user", "assistant"].includes(message.role) &&
+            typeof message.content === "string"
+          )
+          .slice(-CHAT_MAX_MESSAGES);
+      }
+    } catch {
+      chatHistory = [];
+    }
+
+    const chatMessages = $("#chatMessages");
+    const chatForm = $("#chatForm");
+    const chatInput = $("#chatInput");
+    const chatSend = $("#chatSend");
+    const chatStatus = $("#chatStatus");
+    const clearChatButton = $("#clearChat");
+
+    function saveChatHistory() {
+      try {
+        localStorage.setItem(
+          CHAT_KEY,
+          JSON.stringify(chatHistory.slice(-CHAT_MAX_MESSAGES))
+        );
+      } catch (error) {
+        console.warn("Não foi possível salvar o histórico:", error);
+        chatStatus.textContent =
+          "O histórico não pôde ser salvo neste navegador.";
+      }
+    }
+
+    function addChatMessage(role, content) {
+      const message = document.createElement("div");
+      message.className = `chat-message ${role}`;
+      message.textContent = content;
+
+      chatMessages.appendChild(message);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      return message;
+    }
+
+    function renderChatHistory() {
+      chatMessages.replaceChildren();
+
+      if (chatHistory.length === 0) {
+        addChatMessage(
+          "assistant",
+          "Olá! Sou o ATLAS. Como posso ajudar você hoje?"
+        );
+        return;
+      }
+
+      chatHistory.forEach(message => {
+        addChatMessage(message.role, message.content);
+      });
+    }
+
+    function setChatBusy(busy) {
+      chatBusy = busy;
+      chatSend.disabled = busy;
+      chatInput.disabled = busy;
+      clearChatButton.disabled = busy;
+      chatSend.textContent = busy ? "Aguarde..." : "Enviar";
+    }
+
+    chatForm.addEventListener("submit", async event => {
+      event.preventDefault();
+
+      if (chatBusy) return;
+
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      chatHistory.push({
+        role: "user",
+        content: text
+      });
+
+      chatHistory = chatHistory.slice(-CHAT_MAX_MESSAGES);
+      addChatMessage("user", text);
+      chatInput.value = "";
+      saveChatHistory();
+
+      const loadingMessage = addChatMessage(
+        "system",
+        "ATLAS está processando sua mensagem..."
+      );
+
+      setChatBusy(true);
+      chatStatus.textContent = "Conectando à inteligência artificial...";
+
+      try {
+        const response = await fetch(ATLAS_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            messages: chatHistory.slice(-20)
+          })
+        });
+
+        let data;
+
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error(
+            "A API retornou uma resposta que não é JSON válido."
+          );
+        }
+
+        if (!response.ok || data.success !== true) {
+          throw new Error(
+            data.error || `Erro de conexão (HTTP ${response.status}).`
+          );
+        }
+
+        const reply =
+          typeof data.reply === "string" ? data.reply.trim() : "";
+
+        if (!reply) {
+          throw new Error("A API não enviou uma mensagem.");
+        }
+
+        loadingMessage.remove();
+
+        chatHistory.push({
+          role: "assistant",
+          content: reply
+        });
+
+        chatHistory = chatHistory.slice(-CHAT_MAX_MESSAGES);
+        addChatMessage("assistant", reply);
+        saveChatHistory();
+
+        chatStatus.textContent = "Resposta recebida do ATLAS AI.";
+      } catch (error) {
+        loadingMessage.remove();
+
+        addChatMessage(
+          "system",
+          `Não consegui obter uma resposta: ${error.message}\n` +
+          "Verifique a conexão e tente enviar outra mensagem."
+        );
+
+        chatStatus.textContent = "Falha na comunicação com a API.";
+        console.error("Erro na conversa do ATLAS:", error);
+      } finally {
+        setChatBusy(false);
+        chatInput.focus();
+      }
+    });
+
+    chatInput.addEventListener("keydown", event => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.isComposing
+      ) {
+        event.preventDefault();
+        chatForm.requestSubmit();
+      }
+    });
+
+    clearChatButton.addEventListener("click", () => {
+      if (chatBusy) return;
+
+      if (!confirm("Deseja apagar o histórico desta conversa?")) {
+        return;
+      }
+
+      chatHistory = [];
+      saveChatHistory();
+      renderChatHistory();
+      chatStatus.textContent = "Histórico da conversa limpo.";
+    });
+
+    /* BACKUP E RESTAURAÇÃO */
     $("#exportData").addEventListener("click", () => {
+      let briefing = {};
+
+      try {
+        briefing = JSON.parse(
+          localStorage.getItem(BRIEFING_KEY) || "{}"
+        );
+      } catch {
+        briefing = {};
+      }
+
       const backup = {
         app: "ATLAS",
         version: 1,
         exportedAt: new Date().toISOString(),
         db,
-        briefing: JSON.parse(localStorage.getItem(BRIEFING_KEY) || "{}")
+        briefing
       };
 
       const blob = new Blob(
@@ -821,10 +1176,13 @@
       link.href = url;
       link.download = `atlas-backup-${todayString()}.json`;
       link.click();
-      URL.revokeObjectURL(url);
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
 
-    $("#importButton").addEventListener("click", () => $("#importFile").click());
+    $("#importButton").addEventListener("click", () => {
+      $("#importFile").click();
+    });
 
     $("#importFile").addEventListener("change", async event => {
       const file = event.target.files[0];
@@ -834,14 +1192,18 @@
         const imported = JSON.parse(await file.text());
         const candidate = imported.db || imported;
 
-        if (!candidate ||
-            !Array.isArray(candidate.projects) ||
-            !Array.isArray(candidate.tasks) ||
-            !Array.isArray(candidate.memory)) {
+        if (
+          !candidate ||
+          !Array.isArray(candidate.projects) ||
+          !Array.isArray(candidate.tasks) ||
+          !Array.isArray(candidate.memory)
+        ) {
           throw new Error("Formato de backup inválido.");
         }
 
-        if (!confirm("Importar este backup substituirá os dados atuais. Continuar?")) {
+        if (!confirm(
+          "Importar este backup substituirá os dados atuais. Continuar?"
+        )) {
           event.target.value = "";
           return;
         }
@@ -855,7 +1217,10 @@
         localStorage.setItem(DB_KEY, JSON.stringify(db));
 
         if (imported.briefing) {
-          localStorage.setItem(BRIEFING_KEY, JSON.stringify(imported.briefing));
+          localStorage.setItem(
+            BRIEFING_KEY,
+            JSON.stringify(imported.briefing)
+          );
         }
 
         render();
@@ -867,10 +1232,15 @@
       event.target.value = "";
     });
 
+    /* INICIALIZAÇÃO */
     render();
+    renderChatHistory();
     notifyBriefingOnOpen();
 
-    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    if (
+      "serviceWorker" in navigator &&
+      location.protocol.startsWith("http")
+    ) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(error => {
           console.warn("Service Worker não foi registrado:", error);
