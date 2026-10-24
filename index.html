@@ -201,6 +201,43 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 <p id="atlasAudioStatus" class="muted small section" aria-live="polite"></p>
 </div>
 
+<!-- NOVO: GRAVAÇÃO DE VOZ PERSONALIZADA -->
+<div class="panel section">
+<h3>Minha voz</h3>
+<p class="muted small">
+Grave uma amostra da sua própria voz. O áudio não é enviado automaticamente
+para nenhum servidor. Enquanto esta página estiver aberta, você poderá ouvi-lo
+ou baixar o arquivo para guardá-lo.
+</p>
+
+<label>Nome da gravação
+<input id="voiceRecordingName" maxlength="60" placeholder="Ex.: Minha voz" value="Minha voz">
+</label>
+
+<p id="voiceRecordingStatus" class="muted small section" aria-live="polite">
+Nenhuma gravação realizada.
+</p>
+
+<div class="actions">
+<button id="startVoiceRecording" class="primary" type="button">🎙️ Gravar minha voz</button>
+<button id="stopVoiceRecording" type="button" disabled>Parar gravação</button>
+</div>
+
+<audio id="voiceRecordingPlayer" controls class="section hidden" style="width:100%"></audio>
+
+<div class="actions">
+<button id="downloadVoiceRecording" type="button" disabled>Baixar gravação</button>
+<button id="deleteVoiceRecording" type="button" disabled>Apagar gravação</button>
+</div>
+
+<p class="muted small section">
+Importante: a gravação não fica salva permanentemente na ATLAS. Baixe o arquivo
+antes de fechar ou atualizar a página, pois a gravação temporária será perdida.
+Para a ATLAS falar respostas novas usando sua voz, será necessária uma futura
+integração com um serviço de síntese de voz personalizada.
+</p>
+</div>
+
 <div class="panel section"><h3>Backup dos dados</h3>
 <p class="muted small">Exporte seus dados para um arquivo JSON ou importe um backup anterior. Guarde o arquivo em local seguro.</p>
 <div class="actions"><button id="exportData" class="primary">Exportar backup</button><button id="importButton">Importar backup</button>
@@ -312,6 +349,178 @@ $("#atlasStopVoice").addEventListener("click",()=>{stopAtlasSpeech();$("#atlasAu
 $("#atlasTestSound").addEventListener("click",()=>{playAtlasSound("success");$("#atlasAudioStatus").textContent="Teste de som solicitado."});
 if(speechSupported){populateSpeechVoices();if("onvoiceschanged"in speechSynthesis)speechSynthesis.onvoiceschanged=populateSpeechVoices}
 updateAudioControls();
+
+/* GRAVAÇÃO DE VOZ PERSONALIZADA — ATLAS 1.4 */
+const recordStart=$("#startVoiceRecording");
+const recordStop=$("#stopVoiceRecording");
+const recordStatus=$("#voiceRecordingStatus");
+const recordPlayer=$("#voiceRecordingPlayer");
+const recordDownload=$("#downloadVoiceRecording");
+const recordDelete=$("#deleteVoiceRecording");
+const recordName=$("#voiceRecordingName");
+
+let mediaRecorder=null;
+let recordedChunks=[];
+let recordedVoiceBlob=null;
+let recordedVoiceUrl=null;
+let recordingStream=null;
+
+function releaseRecordedVoiceUrl(){
+ if(recordedVoiceUrl){
+  URL.revokeObjectURL(recordedVoiceUrl);
+  recordedVoiceUrl=null;
+ }
+}
+
+function resetVoiceRecording(){
+ releaseRecordedVoiceUrl();
+ recordedVoiceBlob=null;
+ recordedChunks=[];
+ recordPlayer.pause();
+ recordPlayer.removeAttribute("src");
+ recordPlayer.load();
+ recordPlayer.classList.add("hidden");
+ recordDownload.disabled=true;
+ recordDelete.disabled=true;
+}
+
+recordStart.addEventListener("click",async()=>{
+ if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){
+  recordStatus.textContent="Este navegador não oferece suporte à gravação. Abra a ATLAS no Chrome e verifique se está usando HTTPS.";
+  return;
+ }
+
+ if(mediaRecorder?.state==="recording")return;
+
+ try{
+  recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  recordedChunks=[];
+
+  const preferredTypes=[
+   "audio/webm;codecs=opus",
+   "audio/webm",
+   "audio/mp4"
+  ];
+
+  const mimeType=preferredTypes.find(type=>MediaRecorder.isTypeSupported(type));
+
+  mediaRecorder=mimeType
+   ?new MediaRecorder(recordingStream,{mimeType})
+   :new MediaRecorder(recordingStream);
+
+  mediaRecorder.ondataavailable=event=>{
+   if(event.data&&event.data.size>0)recordedChunks.push(event.data);
+  };
+
+  mediaRecorder.onstop=()=>{
+   const type=mediaRecorder.mimeType||"audio/webm";
+
+   /* Copia os blocos antes de limpar a gravação anterior. */
+   const chunks=[...recordedChunks];
+
+   releaseRecordedVoiceUrl();
+   recordedVoiceBlob=null;
+   recordedChunks=[];
+   recordPlayer.pause();
+   recordPlayer.removeAttribute("src");
+   recordPlayer.load();
+   recordPlayer.classList.add("hidden");
+   recordDownload.disabled=true;
+   recordDelete.disabled=true;
+
+   if(chunks.length){
+    recordedVoiceBlob=new Blob(chunks,{type});
+
+    if(recordedVoiceBlob.size>0){
+     recordedVoiceUrl=URL.createObjectURL(recordedVoiceBlob);
+     recordPlayer.src=recordedVoiceUrl;
+     recordPlayer.classList.remove("hidden");
+     recordDownload.disabled=false;
+     recordDelete.disabled=false;
+     recordStatus.textContent="Gravação pronta. Toque em reproduzir para ouvir.";
+    }else{
+     recordedVoiceBlob=null;
+     recordStatus.textContent="O áudio ficou vazio. Tente gravar novamente.";
+    }
+   }else{
+    recordStatus.textContent="Nenhum áudio foi gravado. Tente novamente.";
+   }
+
+   if(recordingStream){
+    recordingStream.getTracks().forEach(track=>track.stop());
+    recordingStream=null;
+   }
+
+   recordStart.disabled=false;
+   recordStop.disabled=true;
+  };
+
+  mediaRecorder.onerror=()=>{
+   recordStatus.textContent="Ocorreu um erro durante a gravação. Tente novamente.";
+   if(mediaRecorder?.state==="recording")mediaRecorder.stop();
+  };
+
+  mediaRecorder.start();
+  recordStart.disabled=true;
+  recordStop.disabled=false;
+  recordStatus.textContent="Gravando... fale naturalmente. Toque em Parar gravação ao terminar.";
+
+ }catch(error){
+  if(recordingStream){
+   recordingStream.getTracks().forEach(track=>track.stop());
+   recordingStream=null;
+  }
+
+  recordStatus.textContent=error.name==="NotAllowedError"
+   ?"Acesso ao microfone negado. Autorize o microfone nas permissões do navegador."
+   :"Não foi possível iniciar a gravação. Verifique o microfone e tente novamente.";
+
+  recordStart.disabled=false;
+  recordStop.disabled=true;
+ }
+});
+
+recordStop.addEventListener("click",()=>{
+ if(mediaRecorder?.state==="recording"){
+  recordStop.disabled=true;
+  recordStatus.textContent="Finalizando gravação...";
+  mediaRecorder.stop();
+ }
+});
+
+recordDownload.addEventListener("click",()=>{
+ if(!recordedVoiceBlob||!recordedVoiceUrl)return;
+
+ const name=(recordName.value.trim()||"minha-voz")
+  .replace(/[^a-zA-Z0-9À-ÿ_-]/g,"_");
+
+ const extension=recordedVoiceBlob.type.includes("mp4")?"mp4":"webm";
+ const link=document.createElement("a");
+ link.href=recordedVoiceUrl;
+ link.download=`${name}.${extension}`;
+ document.body.appendChild(link);
+ link.click();
+ link.remove();
+
+ recordStatus.textContent="Download solicitado. Verifique a pasta de downloads do seu aparelho.";
+});
+
+recordDelete.addEventListener("click",()=>{
+ if(!recordedVoiceBlob)return;
+ if(!confirm("Apagar esta gravação temporária?"))return;
+
+ resetVoiceRecording();
+ recordStatus.textContent="Gravação apagada.";
+});
+
+window.addEventListener("pagehide",()=>{
+ if(mediaRecorder?.state==="recording")mediaRecorder.stop();
+
+ if(recordingStream){
+  recordingStream.getTracks().forEach(track=>track.stop());
+  recordingStream=null;
+ }
+});
 
 /* NAVEGAÇÃO */
 let chatBusy=false;
