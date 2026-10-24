@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -8,7 +7,7 @@
 <meta name="description" content="ATLAS — seu assistente pessoal inteligente.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>ATLAS 1.4 — Voz e Imersão</title>
+<title>ATLAS 1.4.5 — Voz e tarefas inteligentes</title>
 <style>
 :root{color-scheme:dark;--bg:#0b0d12;--panel:#131722;--panel2:#191f2b;--text:#edf1f8;--muted:#929bad;--line:#2a3140;--accent:#9db8ff;--danger:#ff8f9b;--success:#8de0b0;--warning:#ffd58a;--radius:16px}
 *{box-sizing:border-box}
@@ -70,8 +69,6 @@ label{display:grid;gap:6px;font-size:.9rem}
 .voice-button{min-width:48px;min-height:44px;border-color:var(--accent)}
 .voice-button.listening{background:#34476a;border-color:var(--accent);animation:voicePulse 1.2s infinite alternate}
 @keyframes voicePulse{from{opacity:1}to{opacity:.65}}
-.priority-summary{padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;background:var(--panel2)}
-.priority-summary strong{color:var(--accent)}
 footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style>
@@ -81,7 +78,7 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 <p class="eyebrow">PERSONAL INTELLIGENCE SYSTEM</p>
 <h1>ATLAS</h1>
 <p class="muted">Seu assistente pessoal, organizado em um só lugar.</p>
-<span class="badge">Versão 1.4</span>
+<span class="badge">Versão 1.4.5</span>
 </div></header>
 
 <nav aria-label="Navegação principal">
@@ -116,7 +113,7 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 
 <section id="chat" class="page hidden">
 <p class="eyebrow">ATLAS INTELLIGENCE</p><h2>Conversa com o ATLAS</h2>
-<p class="muted">Converse com a IA ou use o microfone para ditar sua mensagem.</p>
+<p class="muted">Diga, por exemplo: “ATLAS, crie uma tarefa para estudar amanhã”. Comandos de criação de tarefas são executados diretamente no aplicativo.</p>
 <div class="panel chat-panel">
 <div class="row"><strong>ATLAS AI</strong><button id="clearChat" type="button">Limpar conversa</button></div>
 <div id="chatMessages" class="chat-messages" role="log" aria-live="polite" aria-label="Mensagens da conversa"></div>
@@ -182,7 +179,6 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 
 <section id="settings" class="page hidden">
 <p class="eyebrow">SISTEMA</p><h2>Configurações</h2>
-
 <div class="panel section"><h3>Voz e efeitos sonoros</h3>
 <p class="muted small">Personalize a voz do ATLAS e os sons da interface. As vozes disponíveis dependem do aparelho.</p>
 <div class="stack">
@@ -201,54 +197,33 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 <p id="atlasAudioStatus" class="muted small section" aria-live="polite"></p>
 </div>
 
-<!-- NOVO: GRAVAÇÃO DE VOZ PERSONALIZADA -->
 <div class="panel section">
 <h3>Minha voz</h3>
-<p class="muted small">
-Grave uma amostra da sua própria voz. O áudio não é enviado automaticamente
-para nenhum servidor. Enquanto esta página estiver aberta, você poderá ouvi-lo
-ou baixar o arquivo para guardá-lo.
-</p>
-
-<label>Nome da gravação
-<input id="voiceRecordingName" maxlength="60" placeholder="Ex.: Minha voz" value="Minha voz">
-</label>
-
-<p id="voiceRecordingStatus" class="muted small section" aria-live="polite">
-Nenhuma gravação realizada.
-</p>
-
+<p class="muted small">Grave uma amostra da sua própria voz. O áudio não é enviado automaticamente para nenhum servidor.</p>
+<label>Nome da gravação<input id="voiceRecordingName" maxlength="60" placeholder="Ex.: Minha voz" value="Minha voz"></label>
+<p id="voiceRecordingStatus" class="muted small section" aria-live="polite">Nenhuma gravação realizada.</p>
 <div class="actions">
 <button id="startVoiceRecording" class="primary" type="button">🎙️ Gravar minha voz</button>
 <button id="stopVoiceRecording" type="button" disabled>Parar gravação</button>
 </div>
-
 <audio id="voiceRecordingPlayer" controls class="section hidden" style="width:100%"></audio>
-
 <div class="actions">
 <button id="downloadVoiceRecording" type="button" disabled>Baixar gravação</button>
 <button id="deleteVoiceRecording" type="button" disabled>Apagar gravação</button>
 </div>
-
-<p class="muted small section">
-Importante: a gravação não fica salva permanentemente na ATLAS. Baixe o arquivo
-antes de fechar ou atualizar a página, pois a gravação temporária será perdida.
-Para a ATLAS falar respostas novas usando sua voz, será necessária uma futura
-integração com um serviço de síntese de voz personalizada.
-</p>
+<p class="muted small section">A gravação é temporária. Baixe o áudio antes de fechar ou atualizar a página. Usar sua voz em respostas novas exige uma integração adicional de síntese de voz personalizada.</p>
 </div>
 
 <div class="panel section"><h3>Backup dos dados</h3>
-<p class="muted small">Exporte seus dados para um arquivo JSON ou importe um backup anterior. Guarde o arquivo em local seguro.</p>
-<div class="actions"><button id="exportData" class="primary">Exportar backup</button><button id="importButton">Importar backup</button>
-<input id="importFile" type="file" accept=".json,application/json" class="hidden"></div>
+<p class="muted small">Exporte seus dados para um arquivo JSON ou importe um backup anterior.</p>
+<div class="actions"><button id="exportData" class="primary">Exportar backup</button><button id="importButton">Importar backup</button><input id="importFile" type="file" accept=".json,application/json" class="hidden"></div>
 </div>
 <div class="panel section"><h3>Sobre o ATLAS</h3>
 <p class="muted small">Os dados ficam armazenados neste navegador. Limpar os dados do site pode apagá-los; faça backups regularmente.</p>
-<p class="muted small">Versão 1.4 — Voz e imersão sonora</p></div>
+<p class="muted small">Versão 1.4.5 — Voz e tarefas inteligentes</p></div>
 </section>
 </main>
-<footer>ATLAS · Assistente pessoal · v1.4</footer>
+<footer>ATLAS · Assistente pessoal · v1.4.5</footer>
 
 <script>
 "use strict";
@@ -274,7 +249,7 @@ function compareTasks(a,b){return taskScore(b)-taskScore(a)||(a.due||"9999-12-31
 function taskRecommendation(t){if(t.done)return"Tarefa concluída";if(t.due){const d=daysUntil(t.due);if(d<0)return`Atrasada há ${Math.abs(d)} dia(s) — atenção imediata`;if(d===0)return"Urgente — vence hoje";if(d===1)return"Prazo próximo — vence amanhã";if(d<=3)return"Prazo próximo — alta atenção";if(d<=7)return"Prazo nesta semana";if(d<=14)return"Prazo nas próximas duas semanas"}return`Prioridade ${priorityLabel(t.priority)} — análise automática`}
 function taskBadgeClass(t){if(!t.done&&t.due){const d=daysUntil(t.due);if(d<=0)return"urgent";if(d<=3)return"soon"}return"normal"}
 
-/* ÁUDIO — ATLAS 1.4 */
+/* ÁUDIO */
 const AUDIO_SETTINGS_KEY="atlas_audio_settings_v1";
 const defaultAudioSettings={voiceEnabled:false,soundsEnabled:true,voiceName:"",voiceVolume:1,voiceRate:1,soundVolume:.35};
 function loadAudioSettings(){
@@ -314,10 +289,7 @@ function speakAtlas(text){
  const clean=String(text||"").trim();if(!clean)return;
  stopAtlasSpeech();
  const u=new SpeechSynthesisUtterance(clean);u.lang="pt-BR";u.volume=audioSettings.voiceVolume;u.rate=audioSettings.voiceRate;u.pitch=1;
- const voices=speechSynthesis.getVoices();
- const chosen=voices.find(v=>v.name===audioSettings.voiceName);
- const br=voices.find(v=>v.lang.toLowerCase()==="pt-br");
- const pt=voices.find(v=>v.lang.toLowerCase().startsWith("pt"));
+ const voices=speechSynthesis.getVoices(),chosen=voices.find(v=>v.name===audioSettings.voiceName),br=voices.find(v=>v.lang.toLowerCase()==="pt-br"),pt=voices.find(v=>v.lang.toLowerCase().startsWith("pt"));
  if(chosen)u.voice=chosen;else if(br)u.voice=br;else if(pt)u.voice=pt;
  u.onstart=()=>{$("#atlasAudioStatus").textContent="ATLAS está falando."};
  u.onend=()=>{$("#atlasAudioStatus").textContent="Fala concluída."};
@@ -326,16 +298,9 @@ function speakAtlas(text){
 }
 function playAtlasSound(kind="click"){
  if(!audioSettings.soundsEnabled||audioSettings.soundVolume<=0)return;
- try{
- const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
- if(!audioContext)audioContext=new AC();
- if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});
- const sounds={click:{f:520,d:.045},navigate:{f:620,d:.065},success:{f:760,d:.11}};
- const s=sounds[kind]||sounds.click,osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;
- osc.type="sine";osc.frequency.setValueAtTime(s.f,now);
- gain.gain.setValueAtTime(Math.max(.0001,audioSettings.soundVolume*.12),now);
- gain.gain.exponentialRampToValueAtTime(.0001,now+s.d);
- osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+s.d);
+ try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audioContext)audioContext=new AC();if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});
+ const sounds={click:{f:520,d:.045},navigate:{f:620,d:.065},success:{f:760,d:.11}},s=sounds[kind]||sounds.click,osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;
+ osc.type="sine";osc.frequency.setValueAtTime(s.f,now);gain.gain.setValueAtTime(Math.max(.0001,audioSettings.soundVolume*.12),now);gain.gain.exponentialRampToValueAtTime(.0001,now+s.d);osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+s.d)
  }catch(e){console.warn("Erro no som",e)}
 }
 $("#atlasVoiceEnabled").addEventListener("change",e=>{audioSettings.voiceEnabled=e.target.checked;saveAudioSettings();if(!audioSettings.voiceEnabled){stopAtlasSpeech();$("#atlasAudioStatus").textContent="Voz desativada."}else $("#atlasAudioStatus").textContent="Voz ativada para as próximas respostas."});
@@ -350,195 +315,46 @@ $("#atlasTestSound").addEventListener("click",()=>{playAtlasSound("success");$("
 if(speechSupported){populateSpeechVoices();if("onvoiceschanged"in speechSynthesis)speechSynthesis.onvoiceschanged=populateSpeechVoices}
 updateAudioControls();
 
-/* GRAVAÇÃO DE VOZ PERSONALIZADA — ATLAS 1.4 */
-const recordStart=$("#startVoiceRecording");
-const recordStop=$("#stopVoiceRecording");
-const recordStatus=$("#voiceRecordingStatus");
-const recordPlayer=$("#voiceRecordingPlayer");
-const recordDownload=$("#downloadVoiceRecording");
-const recordDelete=$("#deleteVoiceRecording");
-const recordName=$("#voiceRecordingName");
-
-let mediaRecorder=null;
-let recordedChunks=[];
-let recordedVoiceBlob=null;
-let recordedVoiceUrl=null;
-let recordingStream=null;
-
-function releaseRecordedVoiceUrl(){
- if(recordedVoiceUrl){
-  URL.revokeObjectURL(recordedVoiceUrl);
-  recordedVoiceUrl=null;
- }
-}
-
-function resetVoiceRecording(){
- releaseRecordedVoiceUrl();
- recordedVoiceBlob=null;
- recordedChunks=[];
- recordPlayer.pause();
- recordPlayer.removeAttribute("src");
- recordPlayer.load();
- recordPlayer.classList.add("hidden");
- recordDownload.disabled=true;
- recordDelete.disabled=true;
-}
-
+/* GRAVAÇÃO DE VOZ */
+const recordStart=$("#startVoiceRecording"),recordStop=$("#stopVoiceRecording"),recordStatus=$("#voiceRecordingStatus"),recordPlayer=$("#voiceRecordingPlayer"),recordDownload=$("#downloadVoiceRecording"),recordDelete=$("#deleteVoiceRecording"),recordName=$("#voiceRecordingName");
+let mediaRecorder=null,recordedChunks=[],recordedVoiceBlob=null,recordedVoiceUrl=null,recordingStream=null;
+function releaseRecordedVoiceUrl(){if(recordedVoiceUrl){URL.revokeObjectURL(recordedVoiceUrl);recordedVoiceUrl=null}}
+function resetVoiceRecording(){releaseRecordedVoiceUrl();recordedVoiceBlob=null;recordedChunks=[];recordPlayer.pause();recordPlayer.removeAttribute("src");recordPlayer.load();recordPlayer.classList.add("hidden");recordDownload.disabled=true;recordDelete.disabled=true}
 recordStart.addEventListener("click",async()=>{
- if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){
-  recordStatus.textContent="Este navegador não oferece suporte à gravação. Abra a ATLAS no Chrome e verifique se está usando HTTPS.";
-  return;
- }
-
+ if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){recordStatus.textContent="Este navegador não oferece suporte à gravação. Abra a ATLAS no Chrome usando HTTPS.";return}
  if(mediaRecorder?.state==="recording")return;
-
  try{
-  recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});
-  recordedChunks=[];
-
-  const preferredTypes=[
-   "audio/webm;codecs=opus",
-   "audio/webm",
-   "audio/mp4"
-  ];
-
-  const mimeType=preferredTypes.find(type=>MediaRecorder.isTypeSupported(type));
-
-  mediaRecorder=mimeType
-   ?new MediaRecorder(recordingStream,{mimeType})
-   :new MediaRecorder(recordingStream);
-
-  mediaRecorder.ondataavailable=event=>{
-   if(event.data&&event.data.size>0)recordedChunks.push(event.data);
-  };
-
+  recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});recordedChunks=[];
+  const types=["audio/webm;codecs=opus","audio/webm","audio/mp4"],mimeType=types.find(t=>MediaRecorder.isTypeSupported(t));
+  mediaRecorder=mimeType?new MediaRecorder(recordingStream,{mimeType}):new MediaRecorder(recordingStream);
+  mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};
   mediaRecorder.onstop=()=>{
-   const type=mediaRecorder.mimeType||"audio/webm";
-
-   /* Copia os blocos antes de limpar a gravação anterior. */
-   const chunks=[...recordedChunks];
-
-   releaseRecordedVoiceUrl();
-   recordedVoiceBlob=null;
-   recordedChunks=[];
-   recordPlayer.pause();
-   recordPlayer.removeAttribute("src");
-   recordPlayer.load();
-   recordPlayer.classList.add("hidden");
-   recordDownload.disabled=true;
-   recordDelete.disabled=true;
-
-   if(chunks.length){
-    recordedVoiceBlob=new Blob(chunks,{type});
-
-    if(recordedVoiceBlob.size>0){
-     recordedVoiceUrl=URL.createObjectURL(recordedVoiceBlob);
-     recordPlayer.src=recordedVoiceUrl;
-     recordPlayer.classList.remove("hidden");
-     recordDownload.disabled=false;
-     recordDelete.disabled=false;
-     recordStatus.textContent="Gravação pronta. Toque em reproduzir para ouvir.";
-    }else{
-     recordedVoiceBlob=null;
-     recordStatus.textContent="O áudio ficou vazio. Tente gravar novamente.";
-    }
-   }else{
-    recordStatus.textContent="Nenhum áudio foi gravado. Tente novamente.";
-   }
-
-   if(recordingStream){
-    recordingStream.getTracks().forEach(track=>track.stop());
-    recordingStream=null;
-   }
-
-   recordStart.disabled=false;
-   recordStop.disabled=true;
+   const type=mediaRecorder.mimeType||"audio/webm",chunks=[...recordedChunks];
+   releaseRecordedVoiceUrl();recordedVoiceBlob=null;recordedChunks=[];
+   recordPlayer.pause();recordPlayer.removeAttribute("src");recordPlayer.load();recordPlayer.classList.add("hidden");recordDownload.disabled=true;recordDelete.disabled=true;
+   if(chunks.length){recordedVoiceBlob=new Blob(chunks,{type});if(recordedVoiceBlob.size>0){recordedVoiceUrl=URL.createObjectURL(recordedVoiceBlob);recordPlayer.src=recordedVoiceUrl;recordPlayer.classList.remove("hidden");recordDownload.disabled=false;recordDelete.disabled=false;recordStatus.textContent="Gravação pronta. Toque em reproduzir para ouvir."}else{recordedVoiceBlob=null;recordStatus.textContent="O áudio ficou vazio. Tente novamente."}}
+   else recordStatus.textContent="Nenhum áudio foi gravado. Tente novamente.";
+   if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}
+   recordStart.disabled=false;recordStop.disabled=true;
   };
-
-  mediaRecorder.onerror=()=>{
-   recordStatus.textContent="Ocorreu um erro durante a gravação. Tente novamente.";
-   if(mediaRecorder?.state==="recording")mediaRecorder.stop();
-  };
-
-  mediaRecorder.start();
-  recordStart.disabled=true;
-  recordStop.disabled=false;
-  recordStatus.textContent="Gravando... fale naturalmente. Toque em Parar gravação ao terminar.";
-
- }catch(error){
-  if(recordingStream){
-   recordingStream.getTracks().forEach(track=>track.stop());
-   recordingStream=null;
-  }
-
-  recordStatus.textContent=error.name==="NotAllowedError"
-   ?"Acesso ao microfone negado. Autorize o microfone nas permissões do navegador."
-   :"Não foi possível iniciar a gravação. Verifique o microfone e tente novamente.";
-
-  recordStart.disabled=false;
-  recordStop.disabled=true;
- }
+  mediaRecorder.onerror=()=>{recordStatus.textContent="Erro durante a gravação.";if(mediaRecorder?.state==="recording")mediaRecorder.stop()};
+  mediaRecorder.start();recordStart.disabled=true;recordStop.disabled=false;recordStatus.textContent="Gravando... fale naturalmente e depois toque em Parar gravação."
+ }catch(error){if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}recordStatus.textContent=error.name==="NotAllowedError"?"Acesso ao microfone negado. Autorize o microfone nas permissões do navegador.":"Não foi possível iniciar a gravação. Verifique o microfone.";recordStart.disabled=false;recordStop.disabled=true}
 });
-
-recordStop.addEventListener("click",()=>{
- if(mediaRecorder?.state==="recording"){
-  recordStop.disabled=true;
-  recordStatus.textContent="Finalizando gravação...";
-  mediaRecorder.stop();
- }
-});
-
-recordDownload.addEventListener("click",()=>{
- if(!recordedVoiceBlob||!recordedVoiceUrl)return;
-
- const name=(recordName.value.trim()||"minha-voz")
-  .replace(/[^a-zA-Z0-9À-ÿ_-]/g,"_");
-
- const extension=recordedVoiceBlob.type.includes("mp4")?"mp4":"webm";
- const link=document.createElement("a");
- link.href=recordedVoiceUrl;
- link.download=`${name}.${extension}`;
- document.body.appendChild(link);
- link.click();
- link.remove();
-
- recordStatus.textContent="Download solicitado. Verifique a pasta de downloads do seu aparelho.";
-});
-
-recordDelete.addEventListener("click",()=>{
- if(!recordedVoiceBlob)return;
- if(!confirm("Apagar esta gravação temporária?"))return;
-
- resetVoiceRecording();
- recordStatus.textContent="Gravação apagada.";
-});
-
-window.addEventListener("pagehide",()=>{
- if(mediaRecorder?.state==="recording")mediaRecorder.stop();
-
- if(recordingStream){
-  recordingStream.getTracks().forEach(track=>track.stop());
-  recordingStream=null;
- }
-});
+recordStop.addEventListener("click",()=>{if(mediaRecorder?.state==="recording"){recordStop.disabled=true;recordStatus.textContent="Finalizando gravação...";mediaRecorder.stop()}});
+recordDownload.addEventListener("click",()=>{if(!recordedVoiceBlob||!recordedVoiceUrl)return;const name=(recordName.value.trim()||"minha-voz").replace(/[^a-zA-Z0-9À-ÿ_-]/g,"_"),ext=recordedVoiceBlob.type.includes("mp4")?"mp4":"webm",a=document.createElement("a");a.href=recordedVoiceUrl;a.download=`${name}.${ext}`;document.body.appendChild(a);a.click();a.remove();recordStatus.textContent="Download solicitado. Verifique a pasta de downloads."});
+recordDelete.addEventListener("click",()=>{if(recordedVoiceBlob&&confirm("Apagar esta gravação temporária?")){resetVoiceRecording();recordStatus.textContent="Gravação apagada."}});
+window.addEventListener("pagehide",()=>{if(mediaRecorder?.state==="recording")mediaRecorder.stop();if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}});
 
 /* NAVEGAÇÃO */
 let chatBusy=false;
-function go(page){
- $$(".page").forEach(s=>s.classList.toggle("hidden",s.id!==page));
- $$("nav [data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
- if(page==="briefing")renderBriefing();
- if(page==="chat"){renderChatHistory();if(!chatBusy)$("#chatInput").focus()}
-}
+function go(page){$$(".page").forEach(s=>s.classList.toggle("hidden",s.id!==page));$$("nav [data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));if(page==="briefing")renderBriefing();if(page==="chat"){renderChatHistory();if(!chatBusy)$("#chatInput").focus()}}
 $$("nav [data-page]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.page!==$(".page:not(.hidden)")?.id)playAtlasSound("navigate");go(b.dataset.page)}));
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>{playAtlasSound("navigate");go(b.dataset.go)}));
 
 function renderDashboard(){
  const pending=db.tasks.filter(t=>!t.done);
- $("#statProjects").textContent=db.projects.length;
- $("#statTasks").textContent=pending.length;
- $("#statDone").textContent=db.tasks.filter(t=>t.done).length;
- $("#statMemory").textContent=db.memory.length;
+ $("#statProjects").textContent=db.projects.length;$("#statTasks").textContent=pending.length;$("#statDone").textContent=db.tasks.filter(t=>t.done).length;$("#statMemory").textContent=db.memory.length;
  $("#welcomeDate").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
  const sorted=[...pending].sort(compareTasks).slice(0,5);
  $("#dashboardTasks").innerHTML=sorted.length?sorted.map(t=>`<div class="item"><div class="row"><strong>${esc(t.title)}</strong><span class="badge ${taskBadgeClass(t)}">${esc(priorityLabel(t.priority))}</span></div><p class="muted small">Prazo: ${esc(dateLabel(t.due))}</p><p class="muted small">${esc(taskRecommendation(t))}</p></div>`).join(""):'<p class="muted small">Nenhuma tarefa pendente. Tudo em ordem.</p>';
@@ -551,8 +367,7 @@ function renderProjects(){
 }
 function renderTasks(){
  const f=$("#taskFilter").value;let tasks=[...db.tasks];
- if(f==="open")tasks=tasks.filter(t=>!t.done);
- if(f==="done")tasks=tasks.filter(t=>t.done);
+ if(f==="open")tasks=tasks.filter(t=>!t.done);if(f==="done")tasks=tasks.filter(t=>t.done);
  tasks.sort((a,b)=>Number(a.done)-Number(b.done)||compareTasks(a,b));
  $("#tasksList").innerHTML=tasks.length?tasks.map(t=>`<div class="item ${t.done?"task-done":""}"><div class="row"><label class="check-row item-main"><input type="checkbox" data-toggle-task="${esc(t.id)}" ${t.done?"checked":""}><strong>${esc(t.title)}</strong></label><button class="danger" data-delete-task="${esc(t.id)}">Excluir</button></div><p class="muted small">Prioridade inicial: ${esc(priorityLabel(t.priority))}</p><p class="muted small">Prazo: ${esc(dateLabel(t.due))} · Projeto: ${esc(projectName(t.projectId))}</p><p><span class="badge ${taskBadgeClass(t)}">${esc(taskRecommendation(t))}</span></p></div>`).join(""):'<p class="muted">Nenhuma tarefa nesta lista.</p>';
 }
@@ -580,12 +395,7 @@ $("#memoryForm").addEventListener("submit",e=>{e.preventDefault();const title=$(
 $("#taskFilter").addEventListener("change",renderTasks);
 $("#refreshBriefing").addEventListener("click",renderBriefing);
 $("#saveBriefingNotes").addEventListener("click",()=>{try{localStorage.setItem(BRIEFING_KEY,JSON.stringify({notes:$("#briefingNotes").value,updatedAt:new Date().toISOString()}));alert("Anotações do briefing salvas.");playAtlasSound("success")}catch{alert("Não foi possível salvar as anotações.")}});
-
-document.addEventListener("change",e=>{
- const id=e.target.dataset.toggleTask;if(!id)return;
- const task=db.tasks.find(t=>t.id===id);
- if(task){task.done=e.target.checked;saveDB();if(task.done)playAtlasSound("success")}
-});
+document.addEventListener("change",e=>{const id=e.target.dataset.toggleTask;if(!id)return;const task=db.tasks.find(t=>t.id===id);if(task){task.done=e.target.checked;saveDB();if(task.done)playAtlasSound("success")}});
 document.addEventListener("click",e=>{
  const target=e.target;if(!(target instanceof Element))return;
  const pb=target.closest("[data-delete-project]"),tb=target.closest("[data-delete-task]"),mb=target.closest("[data-delete-memory]");
@@ -608,7 +418,7 @@ function notifyBriefingOnOpen(){
  try{new Notification("ATLAS — Briefing diário",{body:`${pending.length} tarefa(s) pendente(s). ${urgent} com prazo vencido ou para hoje.`});localStorage.setItem("atlas_last_briefing_notice",today)}catch{}
 }
 
-/* RECONHECIMENTO DE VOZ — DITADO */
+/* RECONHECIMENTO DE VOZ */
 const chatMessages=$("#chatMessages"),chatForm=$("#chatForm"),chatInput=$("#chatInput"),chatSend=$("#chatSend"),chatStatus=$("#chatStatus"),clearChatButton=$("#clearChat"),voiceButton=$("#voiceButton");
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
 let recognition=null,voiceListening=false,voiceFinalTranscript="",voiceInterimTranscript="";
@@ -621,6 +431,80 @@ if(SpeechRecognitionAPI){
 }else{voiceButton.disabled=true;voiceButton.title="Reconhecimento de voz indisponível neste navegador"}
 voiceButton.addEventListener("click",()=>{if(!recognition){chatStatus.textContent="Seu navegador não oferece reconhecimento de voz compatível.";return}if(chatBusy)return;if(voiceListening){recognition.stop();return}try{recognition.start()}catch{chatStatus.textContent="Não foi possível iniciar o microfone. Tente novamente."}});
 
+/* COMANDOS LOCAIS DE TAREFAS */
+function normalizeText(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[.,!?;:]/g," ").replace(/\s+/g," ").trim()}
+function localDateOffset(offset){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+offset);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function extractDueDate(text){
+ const t=normalizeText(text);
+ if(/\bdepois de amanha\b/.test(t))return localDateOffset(2);
+ if(/\bamanha\b/.test(t))return localDateOffset(1);
+ if(/\bhoje\b/.test(t))return localDateOffset(0);
+ const iso=t.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
+ if(iso)return `${iso[1]}-${iso[2]}-${iso[3]}`;
+ const br=t.match(/\b([0-3]?\d)\/([01]?\d)(?:\/(20\d{2}))?\b/);
+ if(br){const year=br[3]||String(new Date().getFullYear()),month=br[2].padStart(2,"0"),day=br[1].padStart(2,"0");const d=new Date(Number(year),Number(month)-1,Number(day));if(d.getFullYear()===Number(year)&&d.getMonth()===Number(month)-1&&d.getDate()===Number(day))return `${year}-${month}-${day}`}
+ const days=t.match(/\bem (\d+) dias?\b/);
+ if(days)return localDateOffset(Math.min(365,Number(days[1])));
+ return "";
+}
+function extractPriority(text){
+ const t=normalizeText(text);
+ if(/\b(urgente|urgencia|prioridade alta|muito importante|alta prioridade)\b/.test(t))return"high";
+ if(/\b(prioridade baixa|baixa prioridade|pouco urgente)\b/.test(t))return"low";
+ if(/\b(prioridade media|media prioridade)\b/.test(t))return"medium";
+ return"medium";
+}
+function extractProject(text){
+ const t=normalizeText(text);
+ const match=t.match(/\bprojeto\s+(.+?)(?=\s+(?:para|amanha|hoje|depois de amanha|com prazo|prioridade|urgente)\b|$)/);
+ if(!match)return"";
+ const wanted=match[1].trim();
+ const p=db.projects.find(x=>normalizeText(x.name)===wanted)||db.projects.find(x=>normalizeText(x.name).includes(wanted)||wanted.includes(normalizeText(x.name)));
+ return p?p.id:null;
+}
+function extractTaskTitle(text){
+ let t=String(text||"").trim();
+ t=t.replace(/^[\s,.:;-]*/,"");
+ t=t.replace(/^(atlas|atla|atlas por favor|por favor)\s*[,.:;-]?\s*/i,"");
+ t=t.replace(/^(por favor\s+)?(crie|criar|adiciona|adicionar|cadastra|cadastrar|registre|registrar|coloque|colocar|inclua|incluir)\s+(uma\s+)?(nova\s+)?tarefa\s*/i,"");
+ t=t.replace(/^(uma\s+)?tarefa\s*/i,"");
+ t=t.replace(/\s+(para|com prazo|vencimento|prioridade)\s+.*$/i,"");
+ t=t.replace(/\s+(urgente|hoje|amanha|depois de amanha)\s*$/i,"");
+ t=t.replace(/\s+em\s+\d+\s+dias?\s*$/i,"");
+ t=t.replace(/\s+no projeto\s+.+$/i,"");
+ t=t.replace(/\s+projeto\s+.+$/i,"");
+ return t.replace(/^[\s,.:;-]+|[\s,.:;-]+$/g,"").trim();
+}
+function isCreateTaskCommand(text){
+ const t=normalizeText(text);
+ const hasTask=/\btarefa(s)?\b/.test(t);
+ const hasCreate=/\b(crie|criar|cria|adiciona|adicionar|adicione|cadastra|cadastrar|registre|registrar|inclua|incluir|coloque|colocar)\b/.test(t);
+ return hasTask&&hasCreate;
+}
+function executeLocalTaskCommand(text){
+ if(!isCreateTaskCommand(text))return null;
+ const title=extractTaskTitle(text);
+ if(!title||title.length<2)return{handled:true,reply:"Posso criar a tarefa, mas não consegui identificar o título. Diga, por exemplo: “ATLAS, crie uma tarefa para estudar matemática amanhã”."};
+ const due=extractDueDate(text);
+ const priority=extractPriority(text);
+ const projectId=extractProject(text);
+ if(projectId===null)return{handled:true,reply:"Não encontrei esse projeto cadastrado. Confira o nome do projeto ou crie-o primeiro na seção Projetos."};
+ const task={id:uid(),title:title.slice(0,150),priority,due,projectId:projectId||"",done:false,createdAt:new Date().toISOString()};
+ try{
+  db.tasks.push(task);
+  localStorage.setItem(DB_KEY,JSON.stringify(db));
+  render();
+  playAtlasSound("success");
+  const parts=[`Tarefa criada: ${task.title}.`,`Prioridade: ${priorityLabel(task.priority)}.`,`Prazo: ${dateLabel(task.due)}.`];
+  if(task.projectId)parts.push(`Projeto: ${projectName(task.projectId)}.`);
+  return{handled:true,reply:parts.join(" ")};
+ }catch(error){
+  db.tasks=db.tasks.filter(t=>t.id!==task.id);
+  console.error("Falha ao salvar tarefa pelo chat",error);
+  return{handled:true,reply:"Identifiquei o comando, mas não consegui salvar a tarefa no armazenamento local. Verifique o espaço disponível no navegador e tente novamente."};
+ }
+}
+
 /* CONVERSA COM API CLOUDFLARE */
 const ATLAS_API_URL="https://atlas-ai-api.leo-77690-m.workers.dev/chat";
 let chatHistory=[];
@@ -629,26 +513,30 @@ function saveChatHistory(){try{localStorage.setItem(CHAT_KEY,JSON.stringify(chat
 function addChatMessage(role,content){const m=document.createElement("div");m.className=`chat-message ${role}`;m.textContent=content;chatMessages.appendChild(m);chatMessages.scrollTop=chatMessages.scrollHeight;return m}
 function renderChatHistory(){chatMessages.replaceChildren();if(!chatHistory.length){addChatMessage("assistant","Olá! Sou o ATLAS. Como posso ajudar você hoje?");return}chatHistory.forEach(m=>addChatMessage(m.role,m.content))}
 function setChatBusy(busy){chatBusy=busy;chatSend.disabled=busy;chatInput.disabled=busy;clearChatButton.disabled=busy;voiceButton.disabled=busy||!recognition;chatSend.textContent=busy?"Aguarde...":"Enviar"}
+function saveAssistantReply(reply){
+ chatHistory.push({role:"assistant",content:reply});chatHistory=chatHistory.slice(-CHAT_MAX_MESSAGES);
+ addChatMessage("assistant",reply);saveChatHistory();speakAtlas(reply);playAtlasSound("success");
+}
 chatForm.addEventListener("submit",async e=>{
  e.preventDefault();if(chatBusy)return;
  if(voiceListening&&recognition)recognition.stop();
  const text=chatInput.value.trim();if(!text)return;
  chatHistory.push({role:"user",content:text});chatHistory=chatHistory.slice(-CHAT_MAX_MESSAGES);
  addChatMessage("user",text);chatInput.value="";saveChatHistory();
- const loading=addChatMessage("system","ATLAS está processando sua mensagem...");
- setChatBusy(true);chatStatus.textContent="Conectando à inteligência artificial...";
+ setChatBusy(true);chatStatus.textContent="Analisando seu comando...";
  try{
-  const response=await fetch(ATLAS_API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:chatHistory.slice(-20)})});
-  let data;try{data=await response.json()}catch{throw new Error("A API retornou uma resposta que não é JSON válido.")}
-  if(!response.ok||data.success!==true)throw new Error(data.error||`Erro de conexão (HTTP ${response.status}).`);
-  const reply=typeof data.reply==="string"?data.reply.trim():"";if(!reply)throw new Error("A API não enviou uma mensagem.");
-  loading.remove();chatHistory.push({role:"assistant",content:reply});chatHistory=chatHistory.slice(-CHAT_MAX_MESSAGES);
-  addChatMessage("assistant",reply);saveChatHistory();
-  chatStatus.textContent="Resposta recebida do ATLAS AI.";
-  speakAtlas(reply);playAtlasSound("success");
- }catch(error){
-  loading.remove();addChatMessage("system",`Não consegui obter uma resposta: ${error.message}\nVerifique a conexão e tente enviar outra mensagem.`);
-  chatStatus.textContent="Falha na comunicação com a API.";console.error("Erro na conversa:",error);
+  /* Primeiro, tenta executar ações locais. Não depende da IA nem da internet. */
+  const action=executeLocalTaskCommand(text);
+  if(action?.handled){saveAssistantReply(action.reply);chatStatus.textContent="Comando executado pelo ATLAS.";return}
+  const loading=addChatMessage("system","ATLAS está processando sua mensagem...");
+  chatStatus.textContent="Conectando à inteligência artificial...";
+  try{
+   const response=await fetch(ATLAS_API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:chatHistory.slice(-20)})});
+   let data;try{data=await response.json()}catch{throw new Error("A API retornou uma resposta que não é JSON válido.")}
+   if(!response.ok||data.success!==true)throw new Error(data.error||`Erro de conexão (HTTP ${response.status}).`);
+   const reply=typeof data.reply==="string"?data.reply.trim():"";if(!reply)throw new Error("A API não enviou uma mensagem.");
+   loading.remove();saveAssistantReply(reply);chatStatus.textContent="Resposta recebida do ATLAS AI.";
+  }catch(error){loading.remove();addChatMessage("system",`Não consegui obter uma resposta: ${error.message}\nVerifique a conexão e tente enviar outra mensagem.`);chatStatus.textContent="Falha na comunicação com a API.";console.error("Erro na conversa:",error)}
  }finally{setChatBusy(false);chatInput.focus()}
 });
 chatInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();chatForm.requestSubmit()}});
