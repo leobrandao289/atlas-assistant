@@ -5,10 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0d12">
-  <meta name="description" content="ATLAS — seu assistente pessoal.">
+  <meta name="description" content="ATLAS — seu assistente pessoal inteligente.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <title>ATLAS — Assistente Pessoal</title>
+  <title>ATLAS 1.3 — Assistente Pessoal</title>
 
   <style>
     :root {
@@ -21,6 +21,8 @@
       --line: #2a3140;
       --accent: #9db8ff;
       --danger: #ff8f9b;
+      --success: #8de0b0;
+      --warning: #ffd58a;
       --radius: 16px;
     }
 
@@ -69,6 +71,7 @@
     h1 { font-size: 1.6rem; margin-bottom: 4px; }
     h2 { font-size: 1.35rem; }
     h3 { font-size: 1rem; }
+
     .muted { color: var(--muted); }
     .small { font-size: .86rem; }
 
@@ -162,7 +165,6 @@
     .danger { color: var(--danger); }
     .item p:last-child { margin-bottom: 0; }
     .item-main { min-width: 0; overflow-wrap: anywhere; }
-
     .item ul { padding-left: 20px; }
 
     .badge {
@@ -172,6 +174,21 @@
       border-radius: 999px;
       color: var(--muted);
       font-size: .78rem;
+    }
+
+    .badge.urgent {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .badge.soon {
+      color: var(--warning);
+      border-color: var(--warning);
+    }
+
+    .badge.normal {
+      color: var(--success);
+      border-color: var(--line);
     }
 
     .check-row {
@@ -184,7 +201,7 @@
     .task-done { opacity: .6; }
     .task-done strong { text-decoration: line-through; }
 
-    /* Interface de conversa do ATLAS */
+    /* Conversa */
     .chat-panel {
       display: flex;
       flex-direction: column;
@@ -249,13 +266,48 @@
       margin: 0;
       color: var(--muted);
       font-size: .85rem;
+      overflow-wrap: anywhere;
     }
+
+    .voice-button {
+      min-width: 48px;
+      min-height: 44px;
+      border-color: var(--accent);
+    }
+
+    .voice-button.listening {
+      background: #34476a;
+      border-color: var(--accent);
+      animation: voicePulse 1.2s infinite alternate;
+    }
+
+    @keyframes voicePulse {
+      from { opacity: 1; }
+      to { opacity: .65; }
+    }
+
+    .priority-summary {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      background: var(--panel2);
+    }
+
+    .priority-summary strong { color: var(--accent); }
 
     footer {
       text-align: center;
       color: var(--muted);
       padding: 18px;
       font-size: .8rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
     }
   </style>
 </head>
@@ -266,6 +318,7 @@
       <p class="eyebrow">PERSONAL INTELLIGENCE SYSTEM</p>
       <h1>ATLAS</h1>
       <p class="muted">Seu assistente pessoal, organizado em um só lugar.</p>
+      <span class="badge">Versão 1.3</span>
     </div>
   </header>
 
@@ -310,7 +363,10 @@
           <h3>Próximas prioridades</h3>
           <button data-go="tasks">Ver tarefas</button>
         </div>
-        <div id="dashboardTasks" class="stack section"></div>
+        <p class="muted small section">
+          Ordenadas automaticamente por prioridade e prazo.
+        </p>
+        <div id="dashboardTasks" class="stack"></div>
       </div>
 
       <div class="panel section">
@@ -326,12 +382,12 @@
       </div>
     </section>
 
-    <!-- CONVERSA COM A IA -->
+    <!-- CONVERSA -->
     <section id="chat" class="page hidden">
       <p class="eyebrow">ATLAS INTELLIGENCE</p>
       <h2>Conversa com o ATLAS</h2>
       <p class="muted">
-        Seu assistente pessoal conectado à inteligência artificial.
+        Converse com a IA ou use o microfone para ditar sua mensagem.
       </p>
 
       <div class="panel chat-panel">
@@ -359,9 +415,18 @@
 
           <div class="row">
             <p id="chatStatus" class="chat-status" aria-live="polite"></p>
-            <button id="chatSend" class="primary" type="submit">
-              Enviar
-            </button>
+            <div class="actions" style="margin-top:0">
+              <button
+                id="voiceButton"
+                class="voice-button"
+                type="button"
+                aria-label="Falar com o ATLAS"
+                title="Reconhecimento de voz"
+              >🎙️</button>
+              <button id="chatSend" class="primary" type="submit">
+                Enviar
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -394,8 +459,11 @@
 
     <!-- TAREFAS -->
     <section id="tasks" class="page hidden">
-      <p class="eyebrow">EXECUÇÃO</p>
+      <p class="eyebrow">EXECUÇÃO INTELIGENTE</p>
       <h2>Tarefas</h2>
+      <p class="muted">
+        O ATLAS avalia prioridades, prazos e tarefas atrasadas automaticamente.
+      </p>
 
       <form id="taskForm" class="panel">
         <h3>Nova tarefa</h3>
@@ -406,7 +474,7 @@
               placeholder="O que precisa ser feito?" required>
           </label>
           <label>
-            Prioridade
+            Prioridade inicial
             <select id="taskPriority">
               <option value="high">Alta</option>
               <option value="medium" selected>Média</option>
@@ -432,21 +500,25 @@
       <div class="panel section">
         <div class="row">
           <h3>Lista de tarefas</h3>
-          <select id="taskFilter" aria-label="Filtrar tarefas" style="width:auto">
+          <select id="taskFilter" aria-label="Filtrar tarefas"
+            style="width:auto">
             <option value="open">Pendentes</option>
             <option value="all">Todas</option>
             <option value="done">Concluídas</option>
           </select>
         </div>
+
         <div id="tasksList" class="stack section"></div>
       </div>
     </section>
 
-    <!-- MEMÓRIA LOCAL -->
+    <!-- MEMÓRIA -->
     <section id="memory" class="page hidden">
       <p class="eyebrow">MEMÓRIA LOCAL</p>
       <h2>Anotações</h2>
-      <p class="muted">Guarde ideias, informações e lembretes importantes.</p>
+      <p class="muted">
+        Guarde ideias, informações e lembretes importantes.
+      </p>
 
       <form id="memoryForm" class="panel">
         <label>
@@ -472,7 +544,7 @@
       <p class="eyebrow">ATLAS INTELLIGENCE</p>
       <h2>Briefing diário</h2>
       <p class="muted">
-        Uma visão rápida das prioridades e dos compromissos registrados.
+        Resumo de prioridades, prazos e compromissos registrados.
       </p>
 
       <div class="panel section">
@@ -492,18 +564,21 @@
         <textarea id="briefingNotes" maxlength="5000"
           placeholder="Compromissos e informações importantes..."></textarea>
         <div class="actions">
-          <button id="saveBriefingNotes" class="primary">Salvar anotações</button>
+          <button id="saveBriefingNotes" class="primary">
+            Salvar anotações
+          </button>
         </div>
       </div>
 
       <div class="panel section">
         <h3>Notificações</h3>
         <p class="muted small">
-          O ATLAS pode mostrar um aviso quando for aberto, se as notificações
-          forem permitidas pelo navegador. Isso não agenda avisos com o app fechado.
+          Os avisos dependem do suporte e das permissões do navegador.
+          Esta funcionalidade não agenda notificações com o app fechado.
         </p>
         <button id="enableNotifications">Ativar notificações</button>
-        <p id="notificationStatus" class="muted small section" aria-live="polite"></p>
+        <p id="notificationStatus" class="muted small section"
+          aria-live="polite"></p>
       </div>
     </section>
 
@@ -521,8 +596,8 @@
         <div class="actions">
           <button id="exportData" class="primary">Exportar backup</button>
           <button id="importButton">Importar backup</button>
-          <input id="importFile" type="file" accept=".json,application/json"
-            class="hidden">
+          <input id="importFile" type="file"
+            accept=".json,application/json" class="hidden">
         </div>
       </div>
 
@@ -532,18 +607,26 @@
           Os dados ficam armazenados neste navegador. Limpar os dados do site
           pode apagá-los; faça backups regularmente.
         </p>
-        <p class="muted small">Versão 1.2 — Conversa com IA</p>
+        <p class="muted small">
+          Versão 1.3 — Voz e prioridades inteligentes
+        </p>
       </div>
     </section>
   </main>
 
-  <footer>ATLAS · Assistente pessoal</footer>
+  <footer>ATLAS · Assistente pessoal · v1.3</footer>
 
   <script>
     "use strict";
 
+    /* =========================================
+       BASE E ARMAZENAMENTO
+    ========================================= */
+
     const DB_KEY = "atlas_pwa_v1";
     const BRIEFING_KEY = "atlas_briefing_v1";
+    const CHAT_KEY = "atlas_chat_history_v1";
+    const CHAT_MAX_MESSAGES = 40;
 
     const $ = selector => document.querySelector(selector);
     const $$ = selector => [...document.querySelectorAll(selector)];
@@ -551,6 +634,7 @@
     function loadDB() {
       try {
         const data = JSON.parse(localStorage.getItem(DB_KEY) || "{}");
+
         return {
           projects: Array.isArray(data.projects) ? data.projects : [],
           tasks: Array.isArray(data.tasks) ? data.tasks : [],
@@ -564,8 +648,13 @@
     let db = loadDB();
 
     function saveDB() {
-      localStorage.setItem(DB_KEY, JSON.stringify(db));
-      render();
+      try {
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+        render();
+      } catch (error) {
+        console.error("Erro ao salvar dados:", error);
+        alert("Não foi possível salvar os dados. Verifique o espaço disponível.");
+      }
     }
 
     function uid() {
@@ -585,8 +674,13 @@
 
     function dateLabel(value) {
       if (!value) return "Sem prazo";
+
       const parts = value.split("-").map(Number);
-      if (parts.length !== 3 || parts.some(Number.isNaN)) return value;
+
+      if (parts.length !== 3 || parts.some(Number.isNaN)) {
+        return value;
+      }
+
       return new Date(parts[0], parts[1] - 1, parts[2])
         .toLocaleDateString("pt-BR");
     }
@@ -594,7 +688,23 @@
     function todayString() {
       const now = new Date();
       const offset = now.getTimezoneOffset() * 60000;
-      return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+
+      return new Date(now.getTime() - offset)
+        .toISOString()
+        .slice(0, 10);
+    }
+
+    function daysUntil(dateString) {
+      if (!dateString) return null;
+
+      const parse = value => {
+        const [year, month, day] = value.split("-").map(Number);
+        return Date.UTC(year, month - 1, day);
+      };
+
+      return Math.round(
+        (parse(dateString) - parse(todayString())) / 86400000
+      );
     }
 
     function priorityLabel(priority) {
@@ -610,6 +720,99 @@
       return project ? project.name : "Sem projeto";
     }
 
+    /* =========================================
+       MOTOR DE PRIORIZAÇÃO AUTOMÁTICA
+    ========================================= */
+
+    function taskScore(task) {
+      if (task.done) return -Infinity;
+
+      const base = {
+        high: 300,
+        medium: 200,
+        low: 100
+      };
+
+      let score = base[task.priority] || 200;
+
+      if (!task.due) return score;
+
+      const days = daysUntil(task.due);
+
+      if (days < 0) {
+        score += 1000 + Math.min(Math.abs(days), 30) * 5;
+      } else if (days === 0) {
+        score += 800;
+      } else if (days <= 3) {
+        score += 600;
+      } else if (days <= 7) {
+        score += 400;
+      } else if (days <= 14) {
+        score += 200;
+      }
+
+      return score;
+    }
+
+    function compareTasks(a, b) {
+      return taskScore(b) - taskScore(a) ||
+        (a.due || "9999-12-31").localeCompare(
+          b.due || "9999-12-31"
+        ) ||
+        (a.createdAt || "").localeCompare(b.createdAt || "");
+    }
+
+    function taskRecommendation(task) {
+      if (task.done) return "Tarefa concluída";
+
+      if (task.due) {
+        const days = daysUntil(task.due);
+
+        if (days < 0) {
+          return `Atrasada há ${Math.abs(days)} dia(s) — atenção imediata`;
+        }
+
+        if (days === 0) {
+          return "Urgente — vence hoje";
+        }
+
+        if (days === 1) {
+          return "Prazo próximo — vence amanhã";
+        }
+
+        if (days <= 3) {
+          return "Prazo próximo — alta atenção";
+        }
+
+        if (days <= 7) {
+          return "Prazo nesta semana";
+        }
+
+        if (days <= 14) {
+          return "Prazo nas próximas duas semanas";
+        }
+      }
+
+      return `Prioridade ${priorityLabel(task.priority)} — análise automática`;
+    }
+
+    function taskBadgeClass(task) {
+      if (!task.done && task.due) {
+        const days = daysUntil(task.due);
+
+        if (days <= 0) return "urgent";
+        if (days <= 3) return "soon";
+      }
+
+      return "normal";
+    }
+
+    /* =========================================
+       NAVEGAÇÃO
+    ========================================= */
+
+    let chatBusy = false;
+
     function go(page) {
       $$(".page").forEach(section => {
         section.classList.toggle("hidden", section.id !== page);
@@ -620,9 +823,13 @@
       });
 
       if (page === "briefing") renderBriefing();
+
       if (page === "chat") {
         renderChatHistory();
-        if (!chatBusy) chatInput.focus();
+
+        if (!chatBusy) {
+          $("#chatInput").focus();
+        }
       }
     }
 
@@ -634,35 +841,52 @@
       button.addEventListener("click", () => go(button.dataset.go));
     });
 
+    /* =========================================
+       PAINEL
+    ========================================= */
+
     function renderDashboard() {
       const pending = db.tasks.filter(task => !task.done);
+
       $("#statProjects").textContent = db.projects.length;
       $("#statTasks").textContent = pending.length;
-      $("#statDone").textContent = db.tasks.filter(task => task.done).length;
+      $("#statDone").textContent =
+        db.tasks.filter(task => task.done).length;
       $("#statMemory").textContent = db.memory.length;
+
       $("#welcomeDate").textContent =
         new Date().toLocaleDateString("pt-BR", {
-          weekday: "long", day: "numeric", month: "long", year: "numeric"
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
         });
 
-      const sorted = [...pending].sort((a, b) => {
-        const priority = { high: 0, medium: 1, low: 2 };
-        return priority[a.priority] - priority[b.priority] ||
-          (a.due || "9999").localeCompare(b.due || "9999");
-      }).slice(0, 5);
+      const sorted = [...pending].sort(compareTasks).slice(0, 5);
 
       $("#dashboardTasks").innerHTML = sorted.length
         ? sorted.map(task => `
           <div class="item">
-            <strong>${esc(task.title)}</strong>
+            <div class="row">
+              <strong>${esc(task.title)}</strong>
+              <span class="badge ${taskBadgeClass(task)}">
+                ${esc(priorityLabel(task.priority))}
+              </span>
+            </div>
             <p class="muted small">
-              Prioridade ${esc(priorityLabel(task.priority))} ·
-              ${esc(dateLabel(task.due))}
+              Prazo: ${esc(dateLabel(task.due))}
+            </p>
+            <p class="muted small">
+              ${esc(taskRecommendation(task))}
             </p>
           </div>
         `).join("")
         : '<p class="muted small">Nenhuma tarefa pendente. Tudo em ordem.</p>';
     }
+
+    /* =========================================
+       PROJETOS
+    ========================================= */
 
     function renderProjects() {
       $("#projectsList").innerHTML = db.projects.length
@@ -671,9 +895,12 @@
             <div class="row">
               <div class="item-main">
                 <strong>${esc(project.name)}</strong>
-                <p class="muted small">${esc(project.description || "Sem descrição")}</p>
+                <p class="muted small">
+                  ${esc(project.description || "Sem descrição")}
+                </p>
               </div>
-              <button class="danger" data-delete-project="${esc(project.id)}">
+              <button class="danger"
+                data-delete-project="${esc(project.id)}">
                 Excluir
               </button>
             </div>
@@ -681,47 +908,80 @@
         `).join("")
         : '<p class="muted">Nenhum projeto cadastrado.</p>';
 
+      const selected = $("#taskProject").value;
+
       $("#taskProject").innerHTML =
         '<option value="">Sem projeto</option>' +
-        db.projects.map(project =>
-          `<option value="${esc(project.id)}">${esc(project.name)}</option>`
-        ).join("");
+        db.projects.map(project => `
+          <option value="${esc(project.id)}">
+            ${esc(project.name)}
+          </option>
+        `).join("");
+
+      if (db.projects.some(project => project.id === selected)) {
+        $("#taskProject").value = selected;
+      }
     }
+
+    /* =========================================
+       TAREFAS
+    ========================================= */
 
     function renderTasks() {
       const filter = $("#taskFilter").value;
       let tasks = [...db.tasks];
 
-      if (filter === "open") tasks = tasks.filter(task => !task.done);
-      if (filter === "done") tasks = tasks.filter(task => task.done);
+      if (filter === "open") {
+        tasks = tasks.filter(task => !task.done);
+      }
 
-      const priority = { high: 0, medium: 1, low: 2 };
-      tasks.sort((a, b) => Number(a.done) - Number(b.done) ||
-        priority[a.priority] - priority[b.priority] ||
-        (a.due || "9999").localeCompare(b.due || "9999"));
+      if (filter === "done") {
+        tasks = tasks.filter(task => task.done);
+      }
+
+      tasks.sort((a, b) =>
+        Number(a.done) - Number(b.done) ||
+        compareTasks(a, b)
+      );
 
       $("#tasksList").innerHTML = tasks.length
         ? tasks.map(task => `
           <div class="item ${task.done ? "task-done" : ""}">
             <div class="row">
               <label class="check-row item-main">
-                <input type="checkbox" data-toggle-task="${esc(task.id)}"
+                <input type="checkbox"
+                  data-toggle-task="${esc(task.id)}"
                   ${task.done ? "checked" : ""}>
                 <strong>${esc(task.title)}</strong>
               </label>
-              <button class="danger" data-delete-task="${esc(task.id)}">
+              <button class="danger"
+                data-delete-task="${esc(task.id)}">
                 Excluir
               </button>
             </div>
+
             <p class="muted small">
-              Prioridade ${esc(priorityLabel(task.priority))} ·
-              Prazo: ${esc(dateLabel(task.due))} ·
-              Projeto: ${esc(projectName(task.projectId))}
+              Prioridade inicial: ${esc(priorityLabel(task.priority))}
+            </p>
+
+            <p class="muted small">
+              Prazo: ${esc(dateLabel(task.due))}
+              · Projeto: ${esc(projectName(task.projectId))}
+            </p>
+
+            <p>
+              <span class="badge ${taskBadgeClass(task)}">
+                ${esc(taskRecommendation(task))}
+              </span>
             </p>
           </div>
         `).join("")
         : '<p class="muted">Nenhuma tarefa nesta lista.</p>';
     }
+
+    /* =========================================
+       MEMÓRIA
+    ========================================= */
 
     function renderMemory() {
       $("#memoryList").innerHTML = db.memory.length
@@ -729,31 +989,40 @@
           <div class="item">
             <div class="row">
               <strong>${esc(note.title)}</strong>
-              <button class="danger" data-delete-memory="${esc(note.id)}">
+              <button class="danger"
+                data-delete-memory="${esc(note.id)}">
                 Excluir
               </button>
             </div>
             <p>${esc(note.content).replace(/\n/g, "<br>")}</p>
             <p class="muted small">
-              Atualizada em ${esc(new Date(note.updatedAt).toLocaleString("pt-BR"))}
+              Atualizada em
+              ${esc(new Date(note.updatedAt).toLocaleString("pt-BR"))}
             </p>
           </div>
         `).join("")
         : '<p class="muted">Nenhuma anotação salva.</p>';
     }
 
+    /* =========================================
+       BRIEFING
+    ========================================= */
+
     function renderBriefing() {
       const open = db.tasks.filter(task => !task.done);
       const today = todayString();
 
-      const high = open.filter(task => task.priority === "high");
-      const overdue = open.filter(task => task.due && task.due < today);
-      const dueToday = open.filter(task => task.due === today);
+      const sorted = [...open].sort(compareTasks);
+
+      const overdue = sorted.filter(task => task.due && task.due < today);
+      const dueToday = sorted.filter(task => task.due === today);
+      const high = sorted.filter(task => task.priority === "high");
 
       const sections = [
         {
-          title: "Prioridades altas",
-          items: high.map(task => task.title)
+          title: "Próximas prioridades",
+          items: sorted.slice(0, 5).map(task =>
+            `${task.title} — ${taskRecommendation(task)}`)
         },
         {
           title: "Prazos vencidos",
@@ -765,6 +1034,10 @@
           items: dueToday.map(task => task.title)
         },
         {
+          title: "Prioridade inicial alta",
+          items: high.map(task => task.title)
+        },
+        {
           title: "Projetos cadastrados",
           items: db.projects.map(project => project.name)
         }
@@ -774,13 +1047,18 @@
         <div class="item">
           <strong>${esc(section.title)}</strong>
           ${section.items.length
-            ? `<ul>${section.items.map(item => `<li>${esc(item)}</li>`).join("")}</ul>`
+            ? `<ul>${section.items.map(item =>
+                `<li>${esc(item)}</li>`
+              ).join("")}</ul>`
             : '<p class="muted small">Nenhum item identificado.</p>'}
         </div>
       `).join("");
 
       try {
-        const saved = JSON.parse(localStorage.getItem(BRIEFING_KEY) || "{}");
+        const saved = JSON.parse(
+          localStorage.getItem(BRIEFING_KEY) || "{}"
+        );
+
         $("#briefingNotes").value = saved.notes || "";
       } catch {
         $("#briefingNotes").value = "";
@@ -794,6 +1072,10 @@
       renderMemory();
       renderBriefing();
     }
+
+    /* =========================================
+       FORMULÁRIOS
+    ========================================= */
 
     $("#projectForm").addEventListener("submit", event => {
       event.preventDefault();
@@ -838,6 +1120,7 @@
 
       const title = $("#memoryTitle").value.trim();
       const content = $("#memoryContent").value.trim();
+
       if (!title || !content) return;
 
       db.memory.push({
@@ -855,26 +1138,38 @@
     $("#refreshBriefing").addEventListener("click", renderBriefing);
 
     $("#saveBriefingNotes").addEventListener("click", () => {
-      localStorage.setItem(BRIEFING_KEY, JSON.stringify({
-        notes: $("#briefingNotes").value,
-        updatedAt: new Date().toISOString()
-      }));
-      alert("Anotações do briefing salvas.");
+      try {
+        localStorage.setItem(BRIEFING_KEY, JSON.stringify({
+          notes: $("#briefingNotes").value,
+          updatedAt: new Date().toISOString()
+        }));
+
+        alert("Anotações do briefing salvas.");
+      } catch {
+        alert("Não foi possível salvar as anotações.");
+      }
     });
+
+    /* =========================================
+       CONCLUIR E EXCLUIR ITENS
+    ========================================= */
 
     document.addEventListener("change", event => {
       const toggleId = event.target.dataset.toggleTask;
-      if (toggleId) {
-        const task = db.tasks.find(item => item.id === toggleId);
-        if (task) {
-          task.done = event.target.checked;
-          saveDB();
-        }
+
+      if (!toggleId) return;
+
+      const task = db.tasks.find(item => item.id === toggleId);
+
+      if (task) {
+        task.done = event.target.checked;
+        saveDB();
       }
     });
 
     document.addEventListener("click", event => {
       const target = event.target;
+
       if (!(target instanceof Element)) return;
 
       const projectButton = target.closest("[data-delete-project]");
@@ -887,9 +1182,13 @@
 
       if (projectId && confirm("Excluir este projeto?")) {
         db.projects = db.projects.filter(item => item.id !== projectId);
+
         db.tasks.forEach(task => {
-          if (task.projectId === projectId) task.projectId = "";
+          if (task.projectId === projectId) {
+            task.projectId = "";
+          }
         });
+
         saveDB();
       }
 
@@ -904,9 +1203,15 @@
       }
     });
 
+    /* =========================================
+       NOTIFICAÇÕES
+    ========================================= */
+
     $("#enableNotifications").addEventListener("click", async () => {
+      const status = $("#notificationStatus");
+
       if (!("Notification" in window)) {
-        $("#notificationStatus").textContent =
+        status.textContent =
           "Este navegador não oferece suporte a notificações.";
         return;
       }
@@ -915,50 +1220,195 @@
         const permission = await Notification.requestPermission();
 
         if (permission === "granted") {
-          $("#notificationStatus").textContent =
+          status.textContent =
             "Permissão concedida. O ATLAS poderá mostrar avisos quando for aberto.";
 
           new Notification("ATLAS", {
             body: "Notificações ativadas. Seu briefing está disponível."
           });
         } else {
-          $("#notificationStatus").textContent =
+          status.textContent =
             "Permissão não concedida. Verifique as configurações do navegador.";
         }
       } catch {
-        $("#notificationStatus").textContent =
+        status.textContent =
           "Não foi possível ativar notificações neste navegador.";
       }
     });
 
     function notifyBriefingOnOpen() {
       if (!("Notification" in window) ||
-          Notification.permission !== "granted") return;
+          Notification.permission !== "granted") {
+        return;
+      }
 
       const today = todayString();
-      if (localStorage.getItem("atlas_last_briefing_notice") === today) return;
 
-      const pending = db.tasks.filter(task => !task.done).length;
+      if (localStorage.getItem("atlas_last_briefing_notice") === today) {
+        return;
+      }
+
+      const pending = db.tasks.filter(task => !task.done);
+      const urgent = pending.filter(task =>
+        task.due && task.due <= today
+      ).length;
 
       try {
         new Notification("ATLAS — Briefing diário", {
-          body: `Você tem ${pending} tarefa(s) pendente(s). Consulte suas prioridades.`
+          body: `${pending.length} tarefa(s) pendente(s). ` +
+            `${urgent} com prazo vencido ou para hoje.`
         });
+
         localStorage.setItem("atlas_last_briefing_notice", today);
       } catch {
         // Alguns navegadores restringem notificações da página.
       }
     }
 
-    /* CONVERSA COM A API DO CLOUDFLARE WORKERS */
+    /* =========================================
+       RECONHECIMENTO DE VOZ
+    ========================================= */
+
+    const chatMessages = $("#chatMessages");
+    const chatForm = $("#chatForm");
+    const chatInput = $("#chatInput");
+    const chatSend = $("#chatSend");
+    const chatStatus = $("#chatStatus");
+    const clearChatButton = $("#clearChat");
+    const voiceButton = $("#voiceButton");
+
+    const SpeechRecognitionAPI =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    let recognition = null;
+    let voiceListening = false;
+    let voiceFinalTranscript = "";
+    let voiceInterimTranscript = "";
+
+    if (SpeechRecognitionAPI) {
+      recognition = new SpeechRecognitionAPI();
+      recognition.lang = "pt-BR";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        voiceListening = true;
+        voiceFinalTranscript = "";
+        voiceInterimTranscript = "";
+
+        voiceButton.classList.add("listening");
+        voiceButton.textContent = "🔴";
+        voiceButton.setAttribute("aria-label", "Parar reconhecimento");
+
+        chatStatus.textContent = "Estou ouvindo...";
+      };
+
+      recognition.onresult = event => {
+        voiceFinalTranscript = "";
+        voiceInterimTranscript = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          const transcript = result[0].transcript;
+
+          if (result.isFinal) {
+            voiceFinalTranscript += transcript + " ";
+          } else {
+            voiceInterimTranscript += transcript;
+          }
+        }
+
+        const transcript =
+          (voiceFinalTranscript + voiceInterimTranscript).trim();
+
+        if (transcript) {
+          chatInput.value = transcript;
+        }
+      };
+
+      recognition.onerror = event => {
+        const messages = {
+          "not-allowed":
+            "Permita o acesso ao microfone nas configurações do navegador.",
+          "service-not-allowed":
+            "O serviço de reconhecimento de voz não está permitido.",
+          "no-speech":
+            "Nenhuma fala foi detectada. Tente novamente.",
+          "audio-capture":
+            "Não foi possível acessar o microfone.",
+          "network":
+            "Falha de rede durante o reconhecimento de voz.",
+          "aborted":
+            "Reconhecimento de voz interrompido."
+        };
+
+        chatStatus.textContent =
+          messages[event.error] ||
+          "O reconhecimento de voz encontrou um erro.";
+      };
+
+      recognition.onend = () => {
+        voiceListening = false;
+
+        voiceButton.classList.remove("listening");
+        voiceButton.textContent = "🎙️";
+        voiceButton.setAttribute("aria-label", "Falar com o ATLAS");
+
+        if (voiceFinalTranscript.trim()) {
+          chatInput.value = voiceFinalTranscript.trim();
+          chatStatus.textContent =
+            "Fala reconhecida. Revise o texto e envie.";
+        } else if (voiceInterimTranscript.trim()) {
+          chatInput.value = voiceInterimTranscript.trim();
+          chatStatus.textContent =
+            "Texto parcial reconhecido. Revise antes de enviar.";
+        } else if (chatStatus.textContent === "Estou ouvindo...") {
+          chatStatus.textContent =
+            "Nenhuma fala reconhecida. Tente novamente.";
+        }
+
+        if (!chatBusy) {
+          voiceButton.disabled = false;
+        }
+      };
+    } else {
+      voiceButton.disabled = true;
+      voiceButton.title =
+        "Reconhecimento de voz indisponível neste navegador";
+    }
+
+    voiceButton.addEventListener("click", () => {
+      if (!recognition) {
+        chatStatus.textContent =
+          "Seu navegador não oferece reconhecimento de voz compatível.";
+        return;
+      }
+
+      if (chatBusy) return;
+
+      if (voiceListening) {
+        recognition.stop();
+        return;
+      }
+
+      try {
+        recognition.start();
+      } catch {
+        chatStatus.textContent =
+          "Não foi possível iniciar o microfone. Tente novamente.";
+      }
+    });
+
+    /* =========================================
+       CONVERSA COM A API CLOUDFLARE WORKERS
+    ========================================= */
+
     const ATLAS_API_URL =
       "https://atlas-ai-api.leo-77690-m.workers.dev/chat";
 
-    const CHAT_KEY = "atlas_chat_history_v1";
-    const CHAT_MAX_MESSAGES = 40;
-
     let chatHistory = [];
-    let chatBusy = false;
 
     try {
       const savedChat = JSON.parse(
@@ -978,13 +1428,6 @@
       chatHistory = [];
     }
 
-    const chatMessages = $("#chatMessages");
-    const chatForm = $("#chatForm");
-    const chatInput = $("#chatInput");
-    const chatSend = $("#chatSend");
-    const chatStatus = $("#chatStatus");
-    const clearChatButton = $("#clearChat");
-
     function saveChatHistory() {
       try {
         localStorage.setItem(
@@ -993,6 +1436,7 @@
         );
       } catch (error) {
         console.warn("Não foi possível salvar o histórico:", error);
+
         chatStatus.textContent =
           "O histórico não pôde ser salvo neste navegador.";
       }
@@ -1000,6 +1444,7 @@
 
     function addChatMessage(role, content) {
       const message = document.createElement("div");
+
       message.className = `chat-message ${role}`;
       message.textContent = content;
 
@@ -1027,9 +1472,12 @@
 
     function setChatBusy(busy) {
       chatBusy = busy;
+
       chatSend.disabled = busy;
       chatInput.disabled = busy;
       clearChatButton.disabled = busy;
+      voiceButton.disabled = busy || !recognition;
+
       chatSend.textContent = busy ? "Aguarde..." : "Enviar";
     }
 
@@ -1038,7 +1486,12 @@
 
       if (chatBusy) return;
 
+      if (voiceListening && recognition) {
+        recognition.stop();
+      }
+
       const text = chatInput.value.trim();
+
       if (!text) return;
 
       chatHistory.push({
@@ -1047,7 +1500,9 @@
       });
 
       chatHistory = chatHistory.slice(-CHAT_MAX_MESSAGES);
+
       addChatMessage("user", text);
+
       chatInput.value = "";
       saveChatHistory();
 
@@ -1057,7 +1512,8 @@
       );
 
       setChatBusy(true);
-      chatStatus.textContent = "Conectando à inteligência artificial...";
+      chatStatus.textContent =
+        "Conectando à inteligência artificial...";
 
       try {
         const response = await fetch(ATLAS_API_URL, {
@@ -1082,7 +1538,8 @@
 
         if (!response.ok || data.success !== true) {
           throw new Error(
-            data.error || `Erro de conexão (HTTP ${response.status}).`
+            data.error ||
+            `Erro de conexão (HTTP ${response.status}).`
           );
         }
 
@@ -1101,6 +1558,7 @@
         });
 
         chatHistory = chatHistory.slice(-CHAT_MAX_MESSAGES);
+
         addChatMessage("assistant", reply);
         saveChatHistory();
 
@@ -1114,7 +1572,9 @@
           "Verifique a conexão e tente enviar outra mensagem."
         );
 
-        chatStatus.textContent = "Falha na comunicação com a API.";
+        chatStatus.textContent =
+          "Falha na comunicação com a API.";
+
         console.error("Erro na conversa do ATLAS:", error);
       } finally {
         setChatBusy(false);
@@ -1143,10 +1603,14 @@
       chatHistory = [];
       saveChatHistory();
       renderChatHistory();
+
       chatStatus.textContent = "Histórico da conversa limpo.";
     });
 
-    /* BACKUP E RESTAURAÇÃO */
+    /* =========================================
+       BACKUP E RESTAURAÇÃO
+    ========================================= */
+
     $("#exportData").addEventListener("click", () => {
       let briefing = {};
 
@@ -1173,6 +1637,7 @@
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
+
       link.href = url;
       link.download = `atlas-backup-${todayString()}.json`;
       link.click();
@@ -1186,6 +1651,7 @@
 
     $("#importFile").addEventListener("change", async event => {
       const file = event.target.files[0];
+
       if (!file) return;
 
       try {
@@ -1232,7 +1698,10 @@
       event.target.value = "";
     });
 
-    /* INICIALIZAÇÃO */
+    /* =========================================
+       INICIALIZAÇÃO E PWA
+    ========================================= */
+
     render();
     renderChatHistory();
     notifyBriefingOnOpen();
@@ -1243,7 +1712,10 @@
     ) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(error => {
-          console.warn("Service Worker não foi registrado:", error);
+          console.warn(
+            "Service Worker não foi registrado:",
+            error
+          );
         });
       });
     }
