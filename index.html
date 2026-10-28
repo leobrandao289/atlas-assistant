@@ -7,7 +7,7 @@
 <meta name="description" content="ATLAS — seu assistente pessoal inteligente.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>ATLAS 1.4.6 — Voz IA e tarefas inteligentes</title>
+<title>ATLAS 1.4.7 — Voz IA otimizada</title>
 <style>
 :root{color-scheme:dark;--bg:#0b0d12;--panel:#131722;--panel2:#191f2b;--text:#edf1f8;--muted:#929bad;--line:#2a3140;--accent:#9db8ff;--danger:#ff8f9b;--success:#8de0b0;--warning:#ffd58a;--radius:16px}
 *{box-sizing:border-box}
@@ -78,7 +78,7 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 <p class="eyebrow">PERSONAL INTELLIGENCE SYSTEM</p>
 <h1>ATLAS</h1>
 <p class="muted">Seu assistente pessoal, organizado em um só lugar.</p>
-<span class="badge">Versão 1.4.6</span>
+<span class="badge">Versão 1.4.7</span>
 </div></header>
 
 <nav aria-label="Navegação principal">
@@ -221,10 +221,10 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 </div>
 <div class="panel section"><h3>Sobre o ATLAS</h3>
 <p class="muted small">Os dados ficam armazenados neste navegador. Limpar os dados do site pode apagá-los; faça backups regularmente.</p>
-<p class="muted small">Versão 1.4.6 — Voz e tarefas inteligentes</p></div>
+<p class="muted small">Versão 1.4.7 — Voz IA otimizada e tarefas inteligentes</p></div>
 </section>
 </main>
-<footer>ATLAS · Assistente pessoal · v1.4.6</footer>
+<footer>ATLAS · Assistente pessoal · v1.4.7</footer>
 
 <script>
 "use strict";
@@ -300,13 +300,22 @@ function populateSpeechVoices(){
   $("#atlasAudioStatus").textContent=`${voices.length} voz(es) disponível(is). As opções em português aparecem primeiro.`;
  }
 }
-let atlasRemoteAudio=null,atlasSpeechRun=0;
+let atlasRemoteAudio=null,atlasSpeechRun=0,atlasTtsController=null;
 const ATLAS_TTS_API="https://api.tts.ai/v1/tts/";
 const ATLAS_TTS_RESULTS="https://api.tts.ai/v1/speech/results/?uuid=";
+
+/* Interrompe tanto a reprodução quanto uma solicitação de voz IA pendente. */
 function stopAtlasSpeech(){
  atlasSpeechRun++;
+ if(atlasTtsController){
+  try{atlasTtsController.abort()}catch(e){}
+  atlasTtsController=null;
+ }
  if(speechSupported)speechSynthesis.cancel();
- if(atlasRemoteAudio){try{atlasRemoteAudio.pause();atlasRemoteAudio.currentTime=0;atlasRemoteAudio.src=""}catch(e){}atlasRemoteAudio=null}
+ if(atlasRemoteAudio){
+  try{atlasRemoteAudio.pause();atlasRemoteAudio.currentTime=0;atlasRemoteAudio.src=""}catch(e){}
+  atlasRemoteAudio=null;
+ }
 }
 function splitAtlasSpeech(text,max=450){
  const words=String(text||"").trim().split(/\s+/),chunks=[];let part="";
@@ -317,77 +326,176 @@ function splitAtlasSpeech(text,max=450){
 }
 function waitForAudio(audio,run){return new Promise((resolve,reject)=>{
  const clean=()=>{audio.removeEventListener("ended",ended);audio.removeEventListener("error",failed)};
- const ended=()=>{clean();resolve()};const failed=()=>{clean();reject(new Error("Falha ao reproduzir o áudio"))};
+ const ended=()=>{clean();resolve()};
+ const failed=()=>{clean();reject(new Error("Falha ao reproduzir o áudio"))};
  audio.addEventListener("ended",ended,{once:true});audio.addEventListener("error",failed,{once:true});
  audio.play().catch(err=>{clean();reject(err)});
  if(run!==atlasSpeechRun){clean();reject(new Error("Fala interrompida"))}
  })}
+
+/*
+ * A geração remota tem uma janela curta para retornar o áudio.
+ * Se demorar mais de 2,8 segundos, abortamos a solicitação e usamos
+ * imediatamente a síntese de voz do aparelho.
+ */
 async function fetchAtlasAIChunk(chunk,run){
- const response=await fetch(ATLAS_TTS_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"kokoro",text:chunk,voice:"pm_alex",format:"mp3",speed:audioSettings.voiceRate,language:"pt"})});
- if(!response.ok)throw new Error("Serviço de voz IA indisponível (HTTP "+response.status+")");
- const data=await response.json();
- let audioUrl=data.result_url||data.audio_url||data.url||"";
- const uuid=data.uuid||data.id;
- if(!audioUrl&&uuid){
-  for(let i=0;i<24;i++){
-   if(run!==atlasSpeechRun)throw new Error("Fala interrompida");
-   await new Promise(r=>setTimeout(r,1500));
-   const poll=await fetch(ATLAS_TTS_RESULTS+encodeURIComponent(uuid));if(!poll.ok)continue;
-   const result=await poll.json();
-   audioUrl=result.result_url||result.audio_url||result.url||result.result?.url||"";
-   const status=String(result.status||result.state||"").toLowerCase();
-   if(audioUrl)break;
-   if(["failed","error","cancelled","canceled"].includes(status))throw new Error("A voz IA não conseguiu gerar o áudio.");
+ const controller=new AbortController();
+ atlasTtsController=controller;
+ let timeoutId=setTimeout(()=>controller.abort(),2800);
+ let timeoutTriggered=false;
+ const timeoutMarker=setTimeout(()=>{timeoutTriggered=true},2800);
+
+ try{
+  const response=await fetch(ATLAS_TTS_API,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    model:"kokoro",
+    text:chunk,
+    voice:"pm_alex",
+    format:"mp3",
+    speed:audioSettings.voiceRate,
+    language:"pt"
+   }),
+   signal:controller.signal
+  });
+
+  if(!response.ok)throw new Error("Serviço de voz IA indisponível (HTTP "+response.status+")");
+  const data=await response.json();
+  let audioUrl=data.result_url||data.audio_url||data.url||"";
+  const uuid=data.uuid||data.id;
+
+  if(!audioUrl&&uuid){
+   for(let i=0;i<4;i++){
+    if(run!==atlasSpeechRun)throw new Error("Fala interrompida");
+    await new Promise(r=>setTimeout(r,450));
+    const poll=await fetch(ATLAS_TTS_RESULTS+encodeURIComponent(uuid),{signal:controller.signal});
+    if(!poll.ok)continue;
+    const result=await poll.json();
+    audioUrl=result.result_url||result.audio_url||result.url||result.result?.url||"";
+    const status=String(result.status||result.state||"").toLowerCase();
+    if(audioUrl)break;
+    if(["failed","error","cancelled","canceled"].includes(status)){
+     throw new Error("A voz IA não conseguiu gerar o áudio.");
+    }
+   }
   }
+
+  if(!audioUrl)throw new Error("A voz IA demorou demais para gerar o áudio.");
+  if(run!==atlasSpeechRun)throw new Error("Fala interrompida");
+
+  /* A geração terminou: não deixe o temporizador interromper a reprodução. */
+  clearTimeout(timeoutId);timeoutId=null;
+  clearTimeout(timeoutMarker);
+
+  const audio=new Audio(audioUrl);
+  audio.volume=audioSettings.voiceVolume;
+  atlasRemoteAudio=audio;
+  await waitForAudio(audio,run);
+  if(atlasRemoteAudio===audio)atlasRemoteAudio=null;
+ }catch(error){
+  if(controller.signal.aborted&&run===atlasSpeechRun){
+   throw new Error(timeoutTriggered?"Tempo limite da voz IA atingido.":"Solicitação de voz IA interrompida.");
+  }
+  throw error;
+ }finally{
+  if(timeoutId!==null)clearTimeout(timeoutId);
+  clearTimeout(timeoutMarker);
+  if(atlasTtsController===controller)atlasTtsController=null;
  }
- if(!audioUrl)throw new Error("O serviço de voz IA não retornou um áudio.");
- if(run!==atlasSpeechRun)throw new Error("Fala interrompida");
- const audio=new Audio(audioUrl);audio.volume=audioSettings.voiceVolume;atlasRemoteAudio=audio;
- await waitForAudio(audio,run);if(atlasRemoteAudio===audio)atlasRemoteAudio=null;
 }
 function speakAtlasDevice(text){
  if(!speechSupported)throw new Error("Síntese de voz do aparelho indisponível");
  return new Promise((resolve,reject)=>{
-  const u=new SpeechSynthesisUtterance(text);u.volume=audioSettings.voiceVolume;u.rate=audioSettings.voiceRate;u.pitch=1;
-  const voices=speechSynthesis.getVoices(),chosen=voices.find(v=>v.name===audioSettings.voiceName),br=voices.find(v=>v.lang.toLowerCase()==="pt-br"),pt=voices.find(v=>v.lang.toLowerCase().startsWith("pt"));
-  if(chosen){u.voice=chosen;u.lang=chosen.lang}else if(br){u.voice=br;u.lang=br.lang}else if(pt){u.voice=pt;u.lang=pt.lang}else u.lang="pt-BR";
-  u.onend=()=>resolve();u.onerror=e=>reject(new Error(e.error||"Falha na voz do aparelho"));speechSynthesis.speak(u);
+  const u=new SpeechSynthesisUtterance(text);
+  u.volume=audioSettings.voiceVolume;u.rate=audioSettings.voiceRate;u.pitch=1;
+  const voices=speechSynthesis.getVoices();
+  const chosen=voices.find(v=>v.name===audioSettings.voiceName);
+  const br=voices.find(v=>v.lang.toLowerCase()==="pt-br");
+  const pt=voices.find(v=>v.lang.toLowerCase().startsWith("pt"));
+  if(chosen){u.voice=chosen;u.lang=chosen.lang}
+  else if(br){u.voice=br;u.lang=br.lang}
+  else if(pt){u.voice=pt;u.lang=pt.lang}
+  else u.lang="pt-BR";
+  u.onend=()=>resolve();
+  u.onerror=e=>reject(new Error(e.error||"Falha na voz do aparelho"));
+  speechSynthesis.speak(u);
  });
 }
 async function speakAtlas(text){
  if(!audioSettings.voiceEnabled)return;
  const clean=String(text||"").trim();if(!clean)return;
- stopAtlasSpeech();const run=atlasSpeechRun;
- $("#atlasAudioStatus").textContent=audioSettings.voiceEngine==="ai"?"Preparando voz IA…":"ATLAS está falando…";
+ stopAtlasSpeech();
+ const run=atlasSpeechRun;
+ $("#atlasAudioStatus").textContent=audioSettings.voiceEngine==="ai"?"Tentando voz IA Alex…":"ATLAS está falando…";
+
  try{
   if(audioSettings.voiceEngine==="ai"){
    const chunks=splitAtlasSpeech(clean);
-   for(const chunk of chunks){if(run!==atlasSpeechRun)return;await fetchAtlasAIChunk(chunk,run)}
-  }else await speakAtlasDevice(clean);
+   for(const chunk of chunks){
+    if(run!==atlasSpeechRun)return;
+    await fetchAtlasAIChunk(chunk,run);
+   }
+  }else{
+   await speakAtlasDevice(clean);
+  }
   if(run===atlasSpeechRun)$("#atlasAudioStatus").textContent="Fala concluída.";
  }catch(error){
   if(run!==atlasSpeechRun)return;
   console.warn("Voz IA indisponível; usando voz do aparelho:",error);
-  $("#atlasAudioStatus").textContent="Voz IA indisponível ou limite gratuito atingido; usando voz do aparelho.";
-  try{stopAtlasSpeech();const fallbackRun=atlasSpeechRun;await speakAtlasDevice(clean);if(fallbackRun===atlasSpeechRun)$("#atlasAudioStatus").textContent="Fala concluída com a voz do aparelho."}
-  catch(fallbackError){if(run===atlasSpeechRun)$("#atlasAudioStatus").textContent="Não foi possível reproduzir a voz. Verifique a conexão ou as vozes do aparelho."}
+  $("#atlasAudioStatus").textContent="Voz IA lenta ou indisponível. Usando a voz do aparelho…";
+
+  try{
+   stopAtlasSpeech();
+   const fallbackRun=atlasSpeechRun;
+   await speakAtlasDevice(clean);
+   if(fallbackRun===atlasSpeechRun){
+    $("#atlasAudioStatus").textContent="Fala concluída com a voz do aparelho.";
+   }
+  }catch(fallbackError){
+   console.warn("Falha na voz do aparelho:",fallbackError);
+   $("#atlasAudioStatus").textContent="Não foi possível reproduzir a voz. Verifique a conexão ou as vozes do aparelho.";
+  }
  }
 }
 function playAtlasSound(kind="click"){
  if(!audioSettings.soundsEnabled||audioSettings.soundVolume<=0)return;
- try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audioContext)audioContext=new AC();if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});
- const sounds={click:{f:520,d:.045},navigate:{f:620,d:.065},success:{f:760,d:.11}},s=sounds[kind]||sounds.click,osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;
- osc.type="sine";osc.frequency.setValueAtTime(s.f,now);gain.gain.setValueAtTime(Math.max(.0001,audioSettings.soundVolume*.12),now);gain.gain.exponentialRampToValueAtTime(.0001,now+s.d);osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+s.d)
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  if(!audioContext)audioContext=new AC();
+  if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});
+  const sounds={click:{f:520,d:.045},navigate:{f:620,d:.065},success:{f:760,d:.11}};
+  const s=sounds[kind]||sounds.click,osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;
+  osc.type="sine";osc.frequency.setValueAtTime(s.f,now);
+  gain.gain.setValueAtTime(Math.max(.0001,audioSettings.soundVolume*.12),now);
+  gain.gain.exponentialRampToValueAtTime(.0001,now+s.d);
+  osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+s.d);
  }catch(e){console.warn("Erro no som",e)}
 }
-$("#atlasVoiceEnabled").addEventListener("change",e=>{audioSettings.voiceEnabled=e.target.checked;saveAudioSettings();if(!audioSettings.voiceEnabled){stopAtlasSpeech();$("#atlasAudioStatus").textContent="Voz desativada."}else $("#atlasAudioStatus").textContent="Voz ativada para as próximas respostas."});
-$("#atlasSoundsEnabled").addEventListener("change",e=>{audioSettings.soundsEnabled=e.target.checked;saveAudioSettings();if(audioSettings.soundsEnabled){playAtlasSound("success");$("#atlasAudioStatus").textContent="Efeitos sonoros ativados."}else $("#atlasAudioStatus").textContent="Efeitos sonoros desativados."});
-$("#atlasVoiceSelect").addEventListener("change",e=>{audioSettings.voiceName=e.target.value;saveAudioSettings();$("#atlasAudioStatus").textContent="Preferência de voz salva."});
-$("#atlasVoiceEngine").addEventListener("change",e=>{audioSettings.voiceEngine=e.target.value==="device"?"device":"ai";saveAudioSettings();$("#atlasAudioStatus").textContent=audioSettings.voiceEngine==="ai"?"Voz IA Alex selecionada. Se falhar, será usada a voz do aparelho.":"Voz do aparelho selecionada."});
+$("#atlasVoiceEnabled").addEventListener("change",e=>{
+ audioSettings.voiceEnabled=e.target.checked;saveAudioSettings();
+ if(!audioSettings.voiceEnabled){stopAtlasSpeech();$("#atlasAudioStatus").textContent="Voz desativada."}
+ else $("#atlasAudioStatus").textContent="Voz ativada para as próximas respostas.";
+});
+$("#atlasSoundsEnabled").addEventListener("change",e=>{
+ audioSettings.soundsEnabled=e.target.checked;saveAudioSettings();
+ if(audioSettings.soundsEnabled){playAtlasSound("success");$("#atlasAudioStatus").textContent="Efeitos sonoros ativados."}
+ else $("#atlasAudioStatus").textContent="Efeitos sonoros desativados.";
+});
+$("#atlasVoiceSelect").addEventListener("change",e=>{
+ audioSettings.voiceName=e.target.value;saveAudioSettings();$("#atlasAudioStatus").textContent="Preferência de voz salva.";
+});
+$("#atlasVoiceEngine").addEventListener("change",e=>{
+ audioSettings.voiceEngine=e.target.value==="device"?"device":"ai";saveAudioSettings();
+ $("#atlasAudioStatus").textContent=audioSettings.voiceEngine==="ai"?"Voz IA Alex selecionada. Se falhar ou demorar, será usada a voz do aparelho.":"Voz do aparelho selecionada.";
+});
 $("#atlasVoiceVolume").addEventListener("input",e=>{audioSettings.voiceVolume=Number(e.target.value);saveAudioSettings()});
 $("#atlasVoiceRate").addEventListener("input",e=>{audioSettings.voiceRate=Number(e.target.value);saveAudioSettings()});
 $("#atlasSoundVolume").addEventListener("input",e=>{audioSettings.soundVolume=Number(e.target.value);saveAudioSettings()});
-$("#atlasTestVoice").addEventListener("click",()=>{audioSettings.voiceEnabled=true;$("#atlasVoiceEnabled").checked=true;saveAudioSettings();speakAtlas("Sistemas de áudio operacionais. Olá, sou o ATLAS. Como posso ajudar você?")});
+$("#atlasTestVoice").addEventListener("click",()=>{
+ audioSettings.voiceEnabled=true;$("#atlasVoiceEnabled").checked=true;saveAudioSettings();
+ speakAtlas("Sistemas de áudio operacionais. Olá, sou o ATLAS. Como posso ajudar você?");
+});
 $("#atlasStopVoice").addEventListener("click",()=>{stopAtlasSpeech();$("#atlasAudioStatus").textContent="Fala interrompida."});
 $("#atlasTestSound").addEventListener("click",()=>{playAtlasSound("success");$("#atlasAudioStatus").textContent="Teste de som solicitado."});
 if(speechSupported){
@@ -400,7 +508,9 @@ updateAudioControls();
 const recordStart=$("#startVoiceRecording"),recordStop=$("#stopVoiceRecording"),recordStatus=$("#voiceRecordingStatus"),recordPlayer=$("#voiceRecordingPlayer"),recordDownload=$("#downloadVoiceRecording"),recordDelete=$("#deleteVoiceRecording"),recordName=$("#voiceRecordingName");
 let mediaRecorder=null,recordedChunks=[],recordedVoiceBlob=null,recordedVoiceUrl=null,recordingStream=null;
 function releaseRecordedVoiceUrl(){if(recordedVoiceUrl){URL.revokeObjectURL(recordedVoiceUrl);recordedVoiceUrl=null}}
-function resetVoiceRecording(){releaseRecordedVoiceUrl();recordedVoiceBlob=null;recordedChunks=[];recordPlayer.pause();recordPlayer.removeAttribute("src");recordPlayer.load();recordPlayer.classList.add("hidden");recordDownload.disabled=true;recordDelete.disabled=true}
+function resetVoiceRecording(){
+ releaseRecordedVoiceUrl();recordedVoiceBlob=null;recordedChunks=[];recordPlayer.pause();recordPlayer.removeAttribute("src");recordPlayer.load();recordPlayer.classList.add("hidden");recordDownload.disabled=true;recordDelete.disabled=true;
+}
 recordStart.addEventListener("click",async()=>{
  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){recordStatus.textContent="Este navegador não oferece suporte à gravação. Abra a ATLAS no Chrome usando HTTPS.";return}
  if(mediaRecorder?.state==="recording")return;
@@ -413,24 +523,51 @@ recordStart.addEventListener("click",async()=>{
    const type=mediaRecorder.mimeType||"audio/webm",chunks=[...recordedChunks];
    releaseRecordedVoiceUrl();recordedVoiceBlob=null;recordedChunks=[];
    recordPlayer.pause();recordPlayer.removeAttribute("src");recordPlayer.load();recordPlayer.classList.add("hidden");recordDownload.disabled=true;recordDelete.disabled=true;
-   if(chunks.length){recordedVoiceBlob=new Blob(chunks,{type});if(recordedVoiceBlob.size>0){recordedVoiceUrl=URL.createObjectURL(recordedVoiceBlob);recordPlayer.src=recordedVoiceUrl;recordPlayer.classList.remove("hidden");recordDownload.disabled=false;recordDelete.disabled=false;recordStatus.textContent="Gravação pronta. Toque em reproduzir para ouvir."}else{recordedVoiceBlob=null;recordStatus.textContent="O áudio ficou vazio. Tente novamente."}}
-   else recordStatus.textContent="Nenhum áudio foi gravado. Tente novamente.";
+   if(chunks.length){
+    recordedVoiceBlob=new Blob(chunks,{type});
+    if(recordedVoiceBlob.size>0){
+     recordedVoiceUrl=URL.createObjectURL(recordedVoiceBlob);recordPlayer.src=recordedVoiceUrl;recordPlayer.classList.remove("hidden");recordDownload.disabled=false;recordDelete.disabled=false;recordStatus.textContent="Gravação pronta. Toque em reproduzir para ouvir.";
+    }else{recordedVoiceBlob=null;recordStatus.textContent="O áudio ficou vazio. Tente novamente."}
+   }else recordStatus.textContent="Nenhum áudio foi gravado. Tente novamente.";
    if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}
    recordStart.disabled=false;recordStop.disabled=true;
   };
   mediaRecorder.onerror=()=>{recordStatus.textContent="Erro durante a gravação.";if(mediaRecorder?.state==="recording")mediaRecorder.stop()};
-  mediaRecorder.start();recordStart.disabled=true;recordStop.disabled=false;recordStatus.textContent="Gravando... fale naturalmente e depois toque em Parar gravação."
- }catch(error){if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}recordStatus.textContent=error.name==="NotAllowedError"?"Acesso ao microfone negado. Autorize o microfone nas permissões do navegador.":"Não foi possível iniciar a gravação. Verifique o microfone.";recordStart.disabled=false;recordStop.disabled=true}
+  mediaRecorder.start();recordStart.disabled=true;recordStop.disabled=false;recordStatus.textContent="Gravando... fale naturalmente e depois toque em Parar gravação.";
+ }catch(error){
+  if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}
+  recordStatus.textContent=error.name==="NotAllowedError"?"Acesso ao microfone negado. Autorize o microfone nas permissões do navegador.":"Não foi possível iniciar a gravação. Verifique o microfone.";
+  recordStart.disabled=false;recordStop.disabled=true;
+ }
 });
-recordStop.addEventListener("click",()=>{if(mediaRecorder?.state==="recording"){recordStop.disabled=true;recordStatus.textContent="Finalizando gravação...";mediaRecorder.stop()}});
-recordDownload.addEventListener("click",()=>{if(!recordedVoiceBlob||!recordedVoiceUrl)return;const name=(recordName.value.trim()||"minha-voz").replace(/[^a-zA-Z0-9À-ÿ_-]/g,"_"),ext=recordedVoiceBlob.type.includes("mp4")?"mp4":"webm",a=document.createElement("a");a.href=recordedVoiceUrl;a.download=`${name}.${ext}`;document.body.appendChild(a);a.click();a.remove();recordStatus.textContent="Download solicitado. Verifique a pasta de downloads."});
-recordDelete.addEventListener("click",()=>{if(recordedVoiceBlob&&confirm("Apagar esta gravação temporária?")){resetVoiceRecording();recordStatus.textContent="Gravação apagada."}});
-window.addEventListener("pagehide",()=>{if(mediaRecorder?.state==="recording")mediaRecorder.stop();if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}});
+recordStop.addEventListener("click",()=>{
+ if(mediaRecorder?.state==="recording"){recordStop.disabled=true;recordStatus.textContent="Finalizando gravação...";mediaRecorder.stop()}
+});
+recordDownload.addEventListener("click",()=>{
+ if(!recordedVoiceBlob||!recordedVoiceUrl)return;
+ const name=(recordName.value.trim()||"minha-voz").replace(/[^a-zA-Z0-9À-ÿ_-]/g,"_"),ext=recordedVoiceBlob.type.includes("mp4")?"mp4":"webm",a=document.createElement("a");
+ a.href=recordedVoiceUrl;a.download=`${name}.${ext}`;document.body.appendChild(a);a.click();a.remove();recordStatus.textContent="Download solicitado. Verifique a pasta de downloads.";
+});
+recordDelete.addEventListener("click",()=>{
+ if(recordedVoiceBlob&&confirm("Apagar esta gravação temporária?")){resetVoiceRecording();recordStatus.textContent="Gravação apagada."}
+});
+window.addEventListener("pagehide",()=>{
+ if(mediaRecorder?.state==="recording")mediaRecorder.stop();
+ if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}
+});
 
 /* NAVEGAÇÃO */
 let chatBusy=false;
-function go(page){$$(".page").forEach(s=>s.classList.toggle("hidden",s.id!==page));$$("nav [data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));if(page==="briefing")renderBriefing();if(page==="chat"){renderChatHistory();if(!chatBusy)$("#chatInput").focus()}}
-$$("nav [data-page]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.page!==$(".page:not(.hidden)")?.id)playAtlasSound("navigate");go(b.dataset.page)}));
+function go(page){
+ $$(".page").forEach(s=>s.classList.toggle("hidden",s.id!==page));
+ $$("nav [data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+ if(page==="briefing")renderBriefing();
+ if(page==="chat"){renderChatHistory();if(!chatBusy)$("#chatInput").focus()}
+}
+$$("nav [data-page]").forEach(b=>b.addEventListener("click",()=>{
+ if(b.dataset.page!==$(".page:not(.hidden)")?.id)playAtlasSound("navigate");
+ go(b.dataset.page);
+}));
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>{playAtlasSound("navigate");go(b.dataset.go)}));
 
 function renderDashboard(){
@@ -448,7 +585,8 @@ function renderProjects(){
 }
 function renderTasks(){
  const f=$("#taskFilter").value;let tasks=[...db.tasks];
- if(f==="open")tasks=tasks.filter(t=>!t.done);if(f==="done")tasks=tasks.filter(t=>t.done);
+ if(f==="open")tasks=tasks.filter(t=>!t.done);
+ if(f==="done")tasks=tasks.filter(t=>t.done);
  tasks.sort((a,b)=>Number(a.done)-Number(b.done)||compareTasks(a,b));
  $("#tasksList").innerHTML=tasks.length?tasks.map(t=>`<div class="item ${t.done?"task-done":""}"><div class="row"><label class="check-row item-main"><input type="checkbox" data-toggle-task="${esc(t.id)}" ${t.done?"checked":""}><strong>${esc(t.title)}</strong></label><button class="danger" data-delete-task="${esc(t.id)}">Excluir</button></div><p class="muted small">Prioridade inicial: ${esc(priorityLabel(t.priority))}</p><p class="muted small">Prazo: ${esc(dateLabel(t.due))} · Projeto: ${esc(projectName(t.projectId))}</p><p><span class="badge ${taskBadgeClass(t)}">${esc(taskRecommendation(t))}</span></p></div>`).join(""):'<p class="muted">Nenhuma tarefa nesta lista.</p>';
 }
@@ -470,13 +608,31 @@ function renderBriefing(){
 function render(){renderDashboard();renderProjects();renderTasks();renderMemory();renderBriefing()}
 
 /* FORMULÁRIOS */
-$("#projectForm").addEventListener("submit",e=>{e.preventDefault();const name=$("#projectName").value.trim();if(!name)return;db.projects.push({id:uid(),name,description:$("#projectDescription").value.trim(),createdAt:new Date().toISOString()});$("#projectForm").reset();saveDB();playAtlasSound("success")});
-$("#taskForm").addEventListener("submit",e=>{e.preventDefault();const title=$("#taskTitle").value.trim();if(!title)return;db.tasks.push({id:uid(),title,priority:$("#taskPriority").value,due:$("#taskDue").value,projectId:$("#taskProject").value,done:false,createdAt:new Date().toISOString()});$("#taskForm").reset();$("#taskPriority").value="medium";saveDB();playAtlasSound("success")});
-$("#memoryForm").addEventListener("submit",e=>{e.preventDefault();const title=$("#memoryTitle").value.trim(),content=$("#memoryContent").value.trim();if(!title||!content)return;db.memory.push({id:uid(),title,content,updatedAt:new Date().toISOString()});$("#memoryForm").reset();saveDB();playAtlasSound("success")});
+$("#projectForm").addEventListener("submit",e=>{
+ e.preventDefault();const name=$("#projectName").value.trim();if(!name)return;
+ db.projects.push({id:uid(),name,description:$("#projectDescription").value.trim(),createdAt:new Date().toISOString()});
+ $("#projectForm").reset();saveDB();playAtlasSound("success");
+});
+$("#taskForm").addEventListener("submit",e=>{
+ e.preventDefault();const title=$("#taskTitle").value.trim();if(!title)return;
+ db.tasks.push({id:uid(),title,priority:$("#taskPriority").value,due:$("#taskDue").value,projectId:$("#taskProject").value,done:false,createdAt:new Date().toISOString()});
+ $("#taskForm").reset();$("#taskPriority").value="medium";saveDB();playAtlasSound("success");
+});
+$("#memoryForm").addEventListener("submit",e=>{
+ e.preventDefault();const title=$("#memoryTitle").value.trim(),content=$("#memoryContent").value.trim();if(!title||!content)return;
+ db.memory.push({id:uid(),title,content,updatedAt:new Date().toISOString()});$("#memoryForm").reset();saveDB();playAtlasSound("success");
+});
 $("#taskFilter").addEventListener("change",renderTasks);
 $("#refreshBriefing").addEventListener("click",renderBriefing);
-$("#saveBriefingNotes").addEventListener("click",()=>{try{localStorage.setItem(BRIEFING_KEY,JSON.stringify({notes:$("#briefingNotes").value,updatedAt:new Date().toISOString()}));alert("Anotações do briefing salvas.");playAtlasSound("success")}catch{alert("Não foi possível salvar as anotações.")}});
-document.addEventListener("change",e=>{const id=e.target.dataset.toggleTask;if(!id)return;const task=db.tasks.find(t=>t.id===id);if(task){task.done=e.target.checked;saveDB();if(task.done)playAtlasSound("success")}});
+$("#saveBriefingNotes").addEventListener("click",()=>{
+ try{localStorage.setItem(BRIEFING_KEY,JSON.stringify({notes:$("#briefingNotes").value,updatedAt:new Date().toISOString()}));alert("Anotações do briefing salvas.");playAtlasSound("success")}
+ catch{alert("Não foi possível salvar as anotações.")}
+});
+document.addEventListener("change",e=>{
+ const id=e.target.dataset.toggleTask;if(!id)return;
+ const task=db.tasks.find(t=>t.id===id);
+ if(task){task.done=e.target.checked;saveDB();if(task.done)playAtlasSound("success")}
+});
 document.addEventListener("click",e=>{
  const target=e.target;if(!(target instanceof Element))return;
  const pb=target.closest("[data-delete-project]"),tb=target.closest("[data-delete-task]"),mb=target.closest("[data-delete-memory]");
@@ -490,7 +646,11 @@ document.addEventListener("click",e=>{
 $("#enableNotifications").addEventListener("click",async()=>{
  const status=$("#notificationStatus");
  if(!("Notification"in window)){status.textContent="Este navegador não oferece suporte a notificações.";return}
- try{const p=await Notification.requestPermission();if(p==="granted"){status.textContent="Permissão concedida. Os avisos funcionam quando o ATLAS está aberto.";new Notification("ATLAS",{body:"Notificações ativadas. Seu briefing está disponível."})}else status.textContent="Permissão não concedida. Verifique as configurações do navegador."}catch{status.textContent="Não foi possível ativar notificações neste navegador."}
+ try{
+  const p=await Notification.requestPermission();
+  if(p==="granted"){status.textContent="Permissão concedida. Os avisos funcionam quando o ATLAS está aberto.";new Notification("ATLAS",{body:"Notificações ativadas. Seu briefing está disponível."})}
+  else status.textContent="Permissão não concedida. Verifique as configurações do navegador.";
+ }catch{status.textContent="Não foi possível ativar notificações neste navegador."}
 });
 function notifyBriefingOnOpen(){
  if(!("Notification"in window)||Notification.permission!=="granted")return;
@@ -506,11 +666,29 @@ let recognition=null,voiceListening=false,voiceFinalTranscript="",voiceInterimTr
 if(SpeechRecognitionAPI){
  recognition=new SpeechRecognitionAPI();recognition.lang="pt-BR";recognition.continuous=false;recognition.interimResults=true;recognition.maxAlternatives=1;
  recognition.onstart=()=>{voiceListening=true;voiceFinalTranscript="";voiceInterimTranscript="";voiceButton.classList.add("listening");voiceButton.textContent="🔴";voiceButton.setAttribute("aria-label","Parar reconhecimento");chatStatus.textContent="Estou ouvindo...";playAtlasSound("click")};
- recognition.onresult=e=>{voiceFinalTranscript="";voiceInterimTranscript="";for(let i=0;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)voiceFinalTranscript+=r[0].transcript+" ";else voiceInterimTranscript+=r[0].transcript}const t=(voiceFinalTranscript+voiceInterimTranscript).trim();if(t)chatInput.value=t};
- recognition.onerror=e=>{const m={"not-allowed":"Permita o acesso ao microfone nas configurações do navegador.","service-not-allowed":"O serviço de reconhecimento não está permitido.","no-speech":"Nenhuma fala foi detectada. Tente novamente.","audio-capture":"Não foi possível acessar o microfone.","network":"Falha de rede durante o reconhecimento.","aborted":"Reconhecimento de voz interrompido."};chatStatus.textContent=m[e.error]||"O reconhecimento de voz encontrou um erro."};
- recognition.onend=()=>{voiceListening=false;voiceButton.classList.remove("listening");voiceButton.textContent="🎙️";voiceButton.setAttribute("aria-label","Falar com o ATLAS");if(voiceFinalTranscript.trim()){chatInput.value=voiceFinalTranscript.trim();chatStatus.textContent="Fala reconhecida. Revise o texto e envie."}else if(voiceInterimTranscript.trim()){chatInput.value=voiceInterimTranscript.trim();chatStatus.textContent="Texto parcial reconhecido. Revise antes de enviar."}else if(chatStatus.textContent==="Estou ouvindo...")chatStatus.textContent="Nenhuma fala reconhecida. Tente novamente.";voiceButton.disabled=chatBusy||!recognition}
+ recognition.onresult=e=>{
+  voiceFinalTranscript="";voiceInterimTranscript="";
+  for(let i=0;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)voiceFinalTranscript+=r[0].transcript+" ";else voiceInterimTranscript+=r[0].transcript}
+  const t=(voiceFinalTranscript+voiceInterimTranscript).trim();if(t)chatInput.value=t;
+ };
+ recognition.onerror=e=>{
+  const m={"not-allowed":"Permita o acesso ao microfone nas configurações do navegador.","service-not-allowed":"O serviço de reconhecimento não está permitido.","no-speech":"Nenhuma fala foi detectada. Tente novamente.","audio-capture":"Não foi possível acessar o microfone.","network":"Falha de rede durante o reconhecimento.","aborted":"Reconhecimento de voz interrompido."};
+  chatStatus.textContent=m[e.error]||"O reconhecimento de voz encontrou um erro.";
+ };
+ recognition.onend=()=>{
+  voiceListening=false;voiceButton.classList.remove("listening");voiceButton.textContent="🎙️";voiceButton.setAttribute("aria-label","Falar com o ATLAS");
+  if(voiceFinalTranscript.trim()){chatInput.value=voiceFinalTranscript.trim();chatStatus.textContent="Fala reconhecida. Revise o texto e envie."}
+  else if(voiceInterimTranscript.trim()){chatInput.value=voiceInterimTranscript.trim();chatStatus.textContent="Texto parcial reconhecido. Revise antes de enviar."}
+  else if(chatStatus.textContent==="Estou ouvindo...")chatStatus.textContent="Nenhuma fala reconhecida. Tente novamente.";
+  voiceButton.disabled=chatBusy||!recognition;
+ };
 }else{voiceButton.disabled=true;voiceButton.title="Reconhecimento de voz indisponível neste navegador"}
-voiceButton.addEventListener("click",()=>{if(!recognition){chatStatus.textContent="Seu navegador não oferece reconhecimento de voz compatível.";return}if(chatBusy)return;if(voiceListening){recognition.stop();return}try{recognition.start()}catch{chatStatus.textContent="Não foi possível iniciar o microfone. Tente novamente."}});
+voiceButton.addEventListener("click",()=>{
+ if(!recognition){chatStatus.textContent="Seu navegador não oferece reconhecimento de voz compatível.";return}
+ if(chatBusy)return;
+ if(voiceListening){recognition.stop();return}
+ try{recognition.start()}catch{chatStatus.textContent="Não foi possível iniciar o microfone. Tente novamente."}
+});
 
 /* COMANDOS LOCAIS DE TAREFAS */
 function normalizeText(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[.,!?;:]/g," ").replace(/\s+/g," ").trim()}
@@ -523,7 +701,10 @@ function extractDueDate(text){
  const iso=t.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
  if(iso)return `${iso[1]}-${iso[2]}-${iso[3]}`;
  const br=t.match(/\b([0-3]?\d)\/([01]?\d)(?:\/(20\d{2}))?\b/);
- if(br){const year=br[3]||String(new Date().getFullYear()),month=br[2].padStart(2,"0"),day=br[1].padStart(2,"0");const d=new Date(Number(year),Number(month)-1,Number(day));if(d.getFullYear()===Number(year)&&d.getMonth()===Number(month)-1&&d.getDate()===Number(day))return `${year}-${month}-${day}`}
+ if(br){
+  const year=br[3]||String(new Date().getFullYear()),month=br[2].padStart(2,"0"),day=br[1].padStart(2,"0"),d=new Date(Number(year),Number(month)-1,Number(day));
+  if(d.getFullYear()===Number(year)&&d.getMonth()===Number(month)-1&&d.getDate()===Number(day))return `${year}-${month}-${day}`;
+ }
  const days=t.match(/\bem (\d+) dias?\b/);
  if(days)return localDateOffset(Math.min(365,Number(days[1])));
  return "";
@@ -566,22 +747,16 @@ function executeLocalTaskCommand(text){
  if(!isCreateTaskCommand(text))return null;
  const title=extractTaskTitle(text);
  if(!title||title.length<2)return{handled:true,reply:"Posso criar a tarefa, mas não consegui identificar o título. Diga, por exemplo: “ATLAS, crie uma tarefa para estudar matemática amanhã”."};
- const due=extractDueDate(text);
- const priority=extractPriority(text);
- const projectId=extractProject(text);
+ const due=extractDueDate(text),priority=extractPriority(text),projectId=extractProject(text);
  if(projectId===null)return{handled:true,reply:"Não encontrei esse projeto cadastrado. Confira o nome do projeto ou crie-o primeiro na seção Projetos."};
  const task={id:uid(),title:title.slice(0,150),priority,due,projectId:projectId||"",done:false,createdAt:new Date().toISOString()};
  try{
-  db.tasks.push(task);
-  localStorage.setItem(DB_KEY,JSON.stringify(db));
-  render();
-  playAtlasSound("success");
+  db.tasks.push(task);localStorage.setItem(DB_KEY,JSON.stringify(db));render();playAtlasSound("success");
   const parts=[`Tarefa criada: ${task.title}.`,`Prioridade: ${priorityLabel(task.priority)}.`,`Prazo: ${dateLabel(task.due)}.`];
   if(task.projectId)parts.push(`Projeto: ${projectName(task.projectId)}.`);
   return{handled:true,reply:parts.join(" ")};
  }catch(error){
-  db.tasks=db.tasks.filter(t=>t.id!==task.id);
-  console.error("Falha ao salvar tarefa pelo chat",error);
+  db.tasks=db.tasks.filter(t=>t.id!==task.id);console.error("Falha ao salvar tarefa pelo chat",error);
   return{handled:true,reply:"Identifiquei o comando, mas não consegui salvar a tarefa no armazenamento local. Verifique o espaço disponível no navegador e tente novamente."};
  }
 }
@@ -589,10 +764,19 @@ function executeLocalTaskCommand(text){
 /* CONVERSA COM API CLOUDFLARE */
 const ATLAS_API_URL="https://atlas-ai-api.leo-77690-m.workers.dev/chat";
 let chatHistory=[];
-try{const saved=JSON.parse(localStorage.getItem(CHAT_KEY)||"[]");if(Array.isArray(saved))chatHistory=saved.filter(m=>m&&["user","assistant"].includes(m.role)&&typeof m.content==="string").slice(-CHAT_MAX_MESSAGES)}catch{chatHistory=[]}
+try{
+ const saved=JSON.parse(localStorage.getItem(CHAT_KEY)||"[]");
+ if(Array.isArray(saved))chatHistory=saved.filter(m=>m&&["user","assistant"].includes(m.role)&&typeof m.content==="string").slice(-CHAT_MAX_MESSAGES);
+}catch{chatHistory=[]}
 function saveChatHistory(){try{localStorage.setItem(CHAT_KEY,JSON.stringify(chatHistory.slice(-CHAT_MAX_MESSAGES)))}catch(e){console.warn("Erro ao salvar histórico",e);chatStatus.textContent="O histórico não pôde ser salvo neste navegador."}}
-function addChatMessage(role,content){const m=document.createElement("div");m.className=`chat-message ${role}`;m.textContent=content;chatMessages.appendChild(m);chatMessages.scrollTop=chatMessages.scrollHeight;return m}
-function renderChatHistory(){chatMessages.replaceChildren();if(!chatHistory.length){addChatMessage("assistant","Olá! Sou o ATLAS. Como posso ajudar você hoje?");return}chatHistory.forEach(m=>addChatMessage(m.role,m.content))}
+function addChatMessage(role,content){
+ const m=document.createElement("div");m.className=`chat-message ${role}`;m.textContent=content;chatMessages.appendChild(m);chatMessages.scrollTop=chatMessages.scrollHeight;return m;
+}
+function renderChatHistory(){
+ chatMessages.replaceChildren();
+ if(!chatHistory.length){addChatMessage("assistant","Olá! Sou o ATLAS. Como posso ajudar você hoje?");return}
+ chatHistory.forEach(m=>addChatMessage(m.role,m.content));
+}
 function setChatBusy(busy){chatBusy=busy;chatSend.disabled=busy;chatInput.disabled=busy;clearChatButton.disabled=busy;voiceButton.disabled=busy||!recognition;chatSend.textContent=busy?"Aguarde...":"Enviar"}
 function saveAssistantReply(reply){
  chatHistory.push({role:"assistant",content:reply});chatHistory=chatHistory.slice(-CHAT_MAX_MESSAGES);
@@ -617,11 +801,20 @@ chatForm.addEventListener("submit",async e=>{
    if(!response.ok||data.success!==true)throw new Error(data.error||`Erro de conexão (HTTP ${response.status}).`);
    const reply=typeof data.reply==="string"?data.reply.trim():"";if(!reply)throw new Error("A API não enviou uma mensagem.");
    loading.remove();saveAssistantReply(reply);chatStatus.textContent="Resposta recebida do ATLAS AI.";
-  }catch(error){loading.remove();addChatMessage("system",`Não consegui obter uma resposta: ${error.message}\nVerifique a conexão e tente enviar outra mensagem.`);chatStatus.textContent="Falha na comunicação com a API.";console.error("Erro na conversa:",error)}
+  }catch(error){
+   loading.remove();addChatMessage("system",`Não consegui obter uma resposta: ${error.message}\nVerifique a conexão e tente enviar outra mensagem.`);
+   chatStatus.textContent="Falha na comunicação com a API.";console.error("Erro na conversa:",error);
+  }
  }finally{setChatBusy(false);chatInput.focus()}
 });
-chatInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();chatForm.requestSubmit()}});
-clearChatButton.addEventListener("click",()=>{if(chatBusy)return;if(!confirm("Deseja apagar o histórico desta conversa?"))return;stopAtlasSpeech();chatHistory=[];saveChatHistory();renderChatHistory();chatStatus.textContent="Histórico da conversa limpo."});
+chatInput.addEventListener("keydown",e=>{
+ if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();chatForm.requestSubmit()}
+});
+clearChatButton.addEventListener("click",()=>{
+ if(chatBusy)return;
+ if(!confirm("Deseja apagar o histórico desta conversa?"))return;
+ stopAtlasSpeech();chatHistory=[];saveChatHistory();renderChatHistory();chatStatus.textContent="Histórico da conversa limpo.";
+});
 
 /* BACKUP E RESTAURAÇÃO */
 $("#exportData").addEventListener("click",()=>{
