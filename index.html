@@ -7,7 +7,7 @@
 <meta name="description" content="ATLAS — seu assistente pessoal inteligente.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>ATLAS 1.4.6 — Voz aprimorada</title>
+<title>ATLAS 1.4.6 — Voz IA e tarefas inteligentes</title>
 <style>
 :root{color-scheme:dark;--bg:#0b0d12;--panel:#131722;--panel2:#191f2b;--text:#edf1f8;--muted:#929bad;--line:#2a3140;--accent:#9db8ff;--danger:#ff8f9b;--success:#8de0b0;--warning:#ffd58a;--radius:16px}
 *{box-sizing:border-box}
@@ -164,478 +164,353 @@ footer{text-align:center;color:var(--muted);padding:18px;font-size:.8rem}
 </section>
 
 <section id="briefing" class="page hidden">
-<p class="eyebrow">BRIEFING DIÁRIO</p><h2>Resumo do dia</h2>
-<p class="muted">Uma visão rápida das prioridades para orientar sua execução.</p>
-<div class="panel"><div class="row"><h3>Seu briefing</h3><button id="refreshBriefing">Atualizar</button></div>
-<div id="briefingContent" class="stack section"></div>
-<label class="section">Nota do dia<textarea id="briefingNote" maxlength="2000" placeholder="O que merece sua atenção hoje?"></textarea></label>
-<div class="actions"><button id="saveBriefing" class="primary" type="button">Salvar nota</button></div>
-<p id="briefingStatus" class="muted small" aria-live="polite"></p>
-</div>
+<p class="eyebrow">ATLAS INTELLIGENCE</p><h2>Briefing diário</h2>
+<p class="muted">Resumo de prioridades, prazos e compromissos registrados.</p>
+<div class="panel section"><div class="row"><h3>Resumo pessoal</h3><button id="refreshBriefing" class="primary">Atualizar</button></div><div id="briefingTasks" class="stack section"></div></div>
+<div class="panel section"><h3>Agenda e acontecimentos</h3>
+<p class="muted small">Registre compromissos, notícias ou assuntos para acompanhar. Esta versão não busca notícias automaticamente.</p>
+<textarea id="briefingNotes" maxlength="5000" placeholder="Compromissos e informações importantes..."></textarea>
+<div class="actions"><button id="saveBriefingNotes" class="primary">Salvar anotações</button></div></div>
+<div class="panel section"><h3>Notificações</h3>
+<p class="muted small">Os avisos dependem do suporte e das permissões do navegador. Esta funcionalidade não agenda notificações com o app fechado.</p>
+<button id="enableNotifications">Ativar notificações</button>
+<p id="notificationStatus" class="muted small section" aria-live="polite"></p></div>
 </section>
 
 <section id="settings" class="page hidden">
-<p class="eyebrow">PERSONALIZAÇÃO</p><h2>Configurações</h2>
-<div class="panel"><h3>Voz do ATLAS</h3>
-<p class="muted small">Personalize a fala e os sons da interface. As vozes disponíveis dependem do navegador e das vozes instaladas no Android. As vozes em português aparecem primeiro, mas você pode experimentar outras.</p>
-<label class="check-row"><input id="voiceEnabled" type="checkbox" checked> Ativar respostas faladas</label>
-<label class="section">Voz do aparelho<select id="atlasVoiceSelect"><option value="">Voz padrão do aparelho</option></select></label>
-<div class="form-grid section">
-<label>Velocidade da fala <span id="voiceRateValue" class="muted small">1,0×</span><input id="voiceRate" type="range" min="0.7" max="1.3" step="0.1" value="1"></label>
-<label>Volume da voz <span id="voiceVolumeValue" class="muted small">100%</span><input id="voiceVolume" type="range" min="0" max="1" step="0.1" value="1"></label>
+<p class="eyebrow">SISTEMA</p><h2>Configurações</h2>
+<div class="panel section"><h3>Voz e efeitos sonoros</h3>
+<p class="muted small">Use a voz IA masculina Alex em português ou escolha a voz disponível no aparelho como alternativa. A voz IA depende da conexão e da cota gratuita do serviço.</p>
+<div class="stack">
+<label class="check-row"><input id="atlasVoiceEnabled" type="checkbox"> Ativar voz nas respostas do ATLAS</label>
+<label class="check-row"><input id="atlasSoundsEnabled" type="checkbox"> Ativar efeitos sonoros</label>
+<label>Motor de voz<select id="atlasVoiceEngine"><option value="ai">Voz IA — Alex (português)</option><option value="device">Voz do aparelho</option></select></label>
+<label>Voz disponível no aparelho<select id="atlasVoiceSelect"><option value="">Voz padrão do aparelho</option></select></label>
+<label>Volume da voz<input id="atlasVoiceVolume" type="range" min="0" max="1" step="0.1" value="1"></label>
+<label>Velocidade da fala<input id="atlasVoiceRate" type="range" min="0.8" max="1.2" step="0.1" value="1"></label>
+<label>Volume dos efeitos sonoros<input id="atlasSoundVolume" type="range" min="0" max="1" step="0.1" value="0.35"></label>
 </div>
-<div class="actions"><button id="testVoice" type="button">Testar voz</button><button id="stopVoice" type="button">Parar fala</button></div>
-<label class="check-row section"><input id="soundsEnabled" type="checkbox" checked> Ativar efeitos sonoros da interface</label>
-<div class="actions"><button id="testSound" type="button">Testar som</button></div>
-<p id="atlasAudioStatus" class="muted small" aria-live="polite">Preparando as vozes disponíveis...</p>
+<div class="actions">
+<button id="atlasTestVoice" class="primary" type="button">Testar voz</button>
+<button id="atlasStopVoice" type="button">Parar fala</button>
+<button id="atlasTestSound" type="button">Testar som</button>
 </div>
-<div class="panel section"><h3>Dados e backup</h3>
-<p class="muted small">Exporte seus dados para guardar uma cópia ou importe um backup anterior. Os dados do ATLAS ficam armazenados neste navegador.</p>
-<div class="actions"><button id="exportData" type="button">Exportar backup</button><button id="importButton" type="button">Importar backup</button><input id="importFile" type="file" accept=".json,application/json" hidden></div>
+<p id="atlasAudioStatus" class="muted small section" aria-live="polite"></p>
 </div>
-<div class="panel section"><h3>Sobre o ATLAS</h3><p class="muted">Versão 1.4.6 — seleção ampliada de vozes e ajustes de reprodução.</p></div>
+
+<div class="panel section">
+<h3>Minha voz</h3>
+<p class="muted small">Grave uma amostra da sua própria voz. O áudio não é enviado automaticamente para nenhum servidor.</p>
+<label>Nome da gravação<input id="voiceRecordingName" maxlength="60" placeholder="Ex.: Minha voz" value="Minha voz"></label>
+<p id="voiceRecordingStatus" class="muted small section" aria-live="polite">Nenhuma gravação realizada.</p>
+<div class="actions">
+<button id="startVoiceRecording" class="primary" type="button">🎙️ Gravar minha voz</button>
+<button id="stopVoiceRecording" type="button" disabled>Parar gravação</button>
+</div>
+<audio id="voiceRecordingPlayer" controls class="section hidden" style="width:100%"></audio>
+<div class="actions">
+<button id="downloadVoiceRecording" type="button" disabled>Baixar gravação</button>
+<button id="deleteVoiceRecording" type="button" disabled>Apagar gravação</button>
+</div>
+<p class="muted small section">A gravação é temporária. Baixe o áudio antes de fechar ou atualizar a página. Usar sua voz em respostas novas exige uma integração adicional de síntese de voz personalizada.</p>
+</div>
+
+<div class="panel section"><h3>Backup dos dados</h3>
+<p class="muted small">Exporte seus dados para um arquivo JSON ou importe um backup anterior.</p>
+<div class="actions"><button id="exportData" class="primary">Exportar backup</button><button id="importButton">Importar backup</button><input id="importFile" type="file" accept=".json,application/json" class="hidden"></div>
+</div>
+<div class="panel section"><h3>Sobre o ATLAS</h3>
+<p class="muted small">Os dados ficam armazenados neste navegador. Limpar os dados do site pode apagá-los; faça backups regularmente.</p>
+<p class="muted small">Versão 1.4.6 — Voz e tarefas inteligentes</p></div>
 </section>
 </main>
-
-<footer>ATLAS 1.4.6 · Assistente pessoal inteligente</footer>
+<footer>ATLAS · Assistente pessoal · v1.4.6</footer>
 
 <script>
 "use strict";
 
-/* CONFIGURAÇÕES E ARMAZENAMENTO */
-const DB_KEY="atlas_pwa_v1";
-const CHAT_KEY="atlas_chat_history_v1";
-const CHAT_MAX_MESSAGES=40;
-const BRIEFING_KEY="atlas_daily_briefing_v1";
-const AUDIO_KEY="atlas_audio_settings_v1";
-const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
-const uid=()=>`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
-const todayString=()=>{
- const d=new Date();
- return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-};
+const DB_KEY="atlas_pwa_v1",BRIEFING_KEY="atlas_briefing_v1",CHAT_KEY="atlas_chat_history_v1",CHAT_MAX_MESSAGES=40;
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+
 function loadDB(){
- try{
-  const raw=JSON.parse(localStorage.getItem(DB_KEY)||"{}");
-  return{
-   projects:Array.isArray(raw.projects)?raw.projects:[],
-   tasks:Array.isArray(raw.tasks)?raw.tasks:[],
-   memory:Array.isArray(raw.memory)?raw.memory:[]
-  };
- }catch{return{projects:[],tasks:[],memory:[]}}
+ try{const d=JSON.parse(localStorage.getItem(DB_KEY)||"{}");return{projects:Array.isArray(d.projects)?d.projects:[],tasks:Array.isArray(d.tasks)?d.tasks:[],memory:Array.isArray(d.memory)?d.memory:[]}}
+ catch{return{projects:[],tasks:[],memory:[]}}
 }
 let db=loadDB();
-let chatBusy=false;
-let voiceListening=false;
-let recognition=null;
-const chatMessages=$("#chatMessages");
-const chatForm=$("#chatForm");
-const chatInput=$("#chatInput");
-const chatSend=$("#chatSend");
-const chatStatus=$("#chatStatus");
-const clearChatButton=$("#clearChat");
-const voiceButton=$("#voiceButton");
+function saveDB(){try{localStorage.setItem(DB_KEY,JSON.stringify(db));render()}catch(e){console.error(e);alert("Não foi possível salvar os dados. Verifique o espaço disponível.")}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function dateLabel(v){if(!v)return"Sem prazo";const p=v.split("-").map(Number);if(p.length!==3||p.some(Number.isNaN))return v;return new Date(p[0],p[1]-1,p[2]).toLocaleDateString("pt-BR")}
+function todayString(){const n=new Date();return new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function daysUntil(s){if(!s)return null;const parse=v=>{const[y,m,d]=v.split("-").map(Number);return Date.UTC(y,m-1,d)};return Math.round((parse(s)-parse(todayString()))/86400000)}
+function priorityLabel(p){return({high:"Alta",medium:"Média",low:"Baixa"})[p]||"Média"}
+function projectName(id){const p=db.projects.find(x=>x.id===id);return p?p.name:"Sem projeto"}
+function taskScore(t){if(t.done)return-Infinity;let s=({high:300,medium:200,low:100})[t.priority]||200;if(!t.due)return s;const d=daysUntil(t.due);if(d<0)s+=1000+Math.min(Math.abs(d),30)*5;else if(d===0)s+=800;else if(d<=3)s+=600;else if(d<=7)s+=400;else if(d<=14)s+=200;return s}
+function compareTasks(a,b){return taskScore(b)-taskScore(a)||(a.due||"9999-12-31").localeCompare(b.due||"9999-12-31")||(a.createdAt||"").localeCompare(b.createdAt||"")}
+function taskRecommendation(t){if(t.done)return"Tarefa concluída";if(t.due){const d=daysUntil(t.due);if(d<0)return`Atrasada há ${Math.abs(d)} dia(s) — atenção imediata`;if(d===0)return"Urgente — vence hoje";if(d===1)return"Prazo próximo — vence amanhã";if(d<=3)return"Prazo próximo — alta atenção";if(d<=7)return"Prazo nesta semana";if(d<=14)return"Prazo nas próximas duas semanas"}return`Prioridade ${priorityLabel(t.priority)} — análise automática`}
+function taskBadgeClass(t){if(!t.done&&t.due){const d=daysUntil(t.due);if(d<=0)return"urgent";if(d<=3)return"soon"}return"normal"}
 
-/* VOZ E SONS */
+/* ÁUDIO */
+const AUDIO_SETTINGS_KEY="atlas_audio_settings_v1";
+const defaultAudioSettings={voiceEnabled:false,soundsEnabled:true,voiceName:"",voiceEngine:"ai",voiceVolume:1,voiceRate:1,soundVolume:.35};
+function loadAudioSettings(){
+ try{const s=JSON.parse(localStorage.getItem(AUDIO_SETTINGS_KEY)||"{}");return{
+ voiceEnabled:typeof s.voiceEnabled==="boolean"?s.voiceEnabled:false,
+ soundsEnabled:typeof s.soundsEnabled==="boolean"?s.soundsEnabled:true,
+ voiceName:typeof s.voiceName==="string"?s.voiceName:"",
+ voiceEngine:s.voiceEngine==="device"?"device":"ai",
+ voiceVolume:Number.isFinite(s.voiceVolume)?Math.max(0,Math.min(1,s.voiceVolume)):1,
+ voiceRate:Number.isFinite(s.voiceRate)?Math.max(.8,Math.min(1.2,s.voiceRate)):1,
+ soundVolume:Number.isFinite(s.soundVolume)?Math.max(0,Math.min(1,s.soundVolume)):.35}}
+ catch{return{...defaultAudioSettings}}
+}
+let audioSettings=loadAudioSettings(),audioContext=null;
 const speechSupported="speechSynthesis"in window&&"SpeechSynthesisUtterance"in window;
-const audioSettings={voiceEnabled:true,voiceName:"",voiceRate:1,voiceVolume:1,soundsEnabled:true};
-try{
- const saved=JSON.parse(localStorage.getItem(AUDIO_KEY)||"{}");
- if(typeof saved.voiceEnabled==="boolean")audioSettings.voiceEnabled=saved.voiceEnabled;
- if(typeof saved.voiceName==="string")audioSettings.voiceName=saved.voiceName;
- if(Number.isFinite(saved.voiceRate))audioSettings.voiceRate=Math.max(.7,Math.min(1.3,saved.voiceRate));
- if(Number.isFinite(saved.voiceVolume))audioSettings.voiceVolume=Math.max(0,Math.min(1,saved.voiceVolume));
- if(typeof saved.soundsEnabled==="boolean")audioSettings.soundsEnabled=saved.soundsEnabled;
-}catch{}
-function saveAudioSettings(){
- try{localStorage.setItem(AUDIO_KEY,JSON.stringify(audioSettings))}
- catch(e){console.warn("Não foi possível salvar as configurações de áudio",e)}
+function saveAudioSettings(){try{localStorage.setItem(AUDIO_SETTINGS_KEY,JSON.stringify(audioSettings))}catch(e){console.warn("Erro ao salvar áudio",e)}}
+function updateAudioControls(){
+ $("#atlasVoiceEnabled").checked=audioSettings.voiceEnabled;
+ $("#atlasVoiceEngine").value=audioSettings.voiceEngine;
+ $("#atlasSoundsEnabled").checked=audioSettings.soundsEnabled;
+ $("#atlasVoiceVolume").value=audioSettings.voiceVolume;
+ $("#atlasVoiceRate").value=audioSettings.voiceRate;
+ $("#atlasSoundVolume").value=audioSettings.soundVolume;
+ if(!speechSupported){$("#atlasVoiceEnabled").disabled=true;$("#atlasTestVoice").disabled=true;$("#atlasVoiceSelect").disabled=true;$("#atlasAudioStatus").textContent="Este navegador não oferece síntese de voz."}
 }
 function populateSpeechVoices(){
  if(!speechSupported)return;
- const select=$("#atlasVoiceSelect"),previous=audioSettings.voiceName;
- const voices=speechSynthesis.getVoices();
- const sorted=[...voices].sort((a,b)=>{
-  const apt=a.lang.toLowerCase().startsWith("pt")?0:1;
-  const bpt=b.lang.toLowerCase().startsWith("pt")?0:1;
-  return apt-bpt||a.lang.localeCompare(b.lang)||a.name.localeCompare(b.name);
- });
+ const select=$("#atlasVoiceSelect"),previous=audioSettings.voiceName,voices=speechSynthesis.getVoices();
  select.replaceChildren();
- const opt=document.createElement("option");
- opt.value="";opt.textContent="Voz padrão do aparelho";select.appendChild(opt);
+ const opt=document.createElement("option");opt.value="";opt.textContent="Voz padrão do aparelho";select.appendChild(opt);
+ const sorted=[...voices].sort((a,b)=>{
+  const apt=a.lang.toLowerCase().startsWith("pt"),bpt=b.lang.toLowerCase().startsWith("pt");
+  if(apt!==bpt)return apt?-1:1;
+  return a.lang.localeCompare(b.lang)||a.name.localeCompare(b.name);
+ });
  sorted.forEach(v=>{
   const o=document.createElement("option");
-  o.value=v.name;o.textContent=`${v.name} (${v.lang})`;
+  o.value=v.name;
+  o.textContent=`${v.name} (${v.lang})`;
   select.appendChild(o);
  });
- if(sorted.some(v=>v.name===previous))select.value=previous;
+ if(sorted.some(v=>v.name===previous)){select.value=previous}
  else{select.value="";audioSettings.voiceName="";saveAudioSettings()}
- if(voices.length)$("#atlasAudioStatus").textContent=`${voices.length} voz(es) disponíveis. As vozes em português aparecem primeiro.`;
- else $("#atlasAudioStatus").textContent="Carregando vozes disponíveis do aparelho...";
-}
-function stopAtlasSpeech(){if(speechSupported)speechSynthesis.cancel()}
-function speakAtlas(text){
- if(!speechSupported||!audioSettings.voiceEnabled)return;
- const clean=String(text||"").replace(/https?:\/\/\S+/g,"link").trim();
- if(!clean)return;
- stopAtlasSpeech();
- const u=new SpeechSynthesisUtterance(clean);
- u.volume=audioSettings.voiceVolume;
- u.rate=audioSettings.voiceRate;
- u.pitch=1;
- const voices=speechSynthesis.getVoices();
- const chosen=voices.find(v=>v.name===audioSettings.voiceName);
- const br=voices.find(v=>v.lang.toLowerCase()==="pt-br");
- const pt=voices.find(v=>v.lang.toLowerCase().startsWith("pt"));
- if(chosen){
-  u.voice=chosen;
-  u.lang=chosen.lang;
- }else if(br){
-  u.voice=br;
-  u.lang=br.lang;
- }else if(pt){
-  u.voice=pt;
-  u.lang=pt.lang;
+ if(!voices.length){
+  $("#atlasAudioStatus").textContent="Carregando vozes disponíveis... Se a lista continuar vazia, verifique as vozes instaladas no aparelho.";
  }else{
-  u.lang="pt-BR";
+  $("#atlasAudioStatus").textContent=`${voices.length} voz(es) disponível(is). As opções em português aparecem primeiro.`;
  }
- u.onstart=()=>{$("#atlasAudioStatus").textContent="ATLAS está falando."};
- u.onend=()=>{$("#atlasAudioStatus").textContent="Fala concluída."};
- u.onerror=e=>{if(e.error!=="canceled")$("#atlasAudioStatus").textContent="Não foi possível reproduzir a voz selecionada."};
- speechSynthesis.speak(u);
 }
-let audioContext=null;
-function playAtlasSound(type="click"){
- if(!audioSettings.soundsEnabled)return;
+let atlasRemoteAudio=null,atlasSpeechRun=0;
+const ATLAS_TTS_API="https://api.tts.ai/v1/tts/";
+const ATLAS_TTS_RESULTS="https://api.tts.ai/v1/speech/results/?uuid=";
+function stopAtlasSpeech(){
+ atlasSpeechRun++;
+ if(speechSupported)speechSynthesis.cancel();
+ if(atlasRemoteAudio){try{atlasRemoteAudio.pause();atlasRemoteAudio.currentTime=0;atlasRemoteAudio.src=""}catch(e){}atlasRemoteAudio=null}
+}
+function splitAtlasSpeech(text,max=450){
+ const words=String(text||"").trim().split(/\s+/),chunks=[];let part="";
+ for(const word of words){
+  if((part?part+" "+word:word).length>max&&part){chunks.push(part);part=word}else part=part?part+" "+word:word;
+ }
+ if(part)chunks.push(part);return chunks;
+}
+function waitForAudio(audio,run){return new Promise((resolve,reject)=>{
+ const clean=()=>{audio.removeEventListener("ended",ended);audio.removeEventListener("error",failed)};
+ const ended=()=>{clean();resolve()};const failed=()=>{clean();reject(new Error("Falha ao reproduzir o áudio"))};
+ audio.addEventListener("ended",ended,{once:true});audio.addEventListener("error",failed,{once:true});
+ audio.play().catch(err=>{clean();reject(err)});
+ if(run!==atlasSpeechRun){clean();reject(new Error("Fala interrompida"))}
+ })}
+async function fetchAtlasAIChunk(chunk,run){
+ const response=await fetch(ATLAS_TTS_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"kokoro",text:chunk,voice:"pm_alex",format:"mp3",speed:audioSettings.voiceRate,language:"pt"})});
+ if(!response.ok)throw new Error("Serviço de voz IA indisponível (HTTP "+response.status+")");
+ const data=await response.json();
+ let audioUrl=data.result_url||data.audio_url||data.url||"";
+ const uuid=data.uuid||data.id;
+ if(!audioUrl&&uuid){
+  for(let i=0;i<24;i++){
+   if(run!==atlasSpeechRun)throw new Error("Fala interrompida");
+   await new Promise(r=>setTimeout(r,1500));
+   const poll=await fetch(ATLAS_TTS_RESULTS+encodeURIComponent(uuid));if(!poll.ok)continue;
+   const result=await poll.json();
+   audioUrl=result.result_url||result.audio_url||result.url||result.result?.url||"";
+   const status=String(result.status||result.state||"").toLowerCase();
+   if(audioUrl)break;
+   if(["failed","error","cancelled","canceled"].includes(status))throw new Error("A voz IA não conseguiu gerar o áudio.");
+  }
+ }
+ if(!audioUrl)throw new Error("O serviço de voz IA não retornou um áudio.");
+ if(run!==atlasSpeechRun)throw new Error("Fala interrompida");
+ const audio=new Audio(audioUrl);audio.volume=audioSettings.voiceVolume;atlasRemoteAudio=audio;
+ await waitForAudio(audio,run);if(atlasRemoteAudio===audio)atlasRemoteAudio=null;
+}
+function speakAtlasDevice(text){
+ if(!speechSupported)throw new Error("Síntese de voz do aparelho indisponível");
+ return new Promise((resolve,reject)=>{
+  const u=new SpeechSynthesisUtterance(text);u.volume=audioSettings.voiceVolume;u.rate=audioSettings.voiceRate;u.pitch=1;
+  const voices=speechSynthesis.getVoices(),chosen=voices.find(v=>v.name===audioSettings.voiceName),br=voices.find(v=>v.lang.toLowerCase()==="pt-br"),pt=voices.find(v=>v.lang.toLowerCase().startsWith("pt"));
+  if(chosen){u.voice=chosen;u.lang=chosen.lang}else if(br){u.voice=br;u.lang=br.lang}else if(pt){u.voice=pt;u.lang=pt.lang}else u.lang="pt-BR";
+  u.onend=()=>resolve();u.onerror=e=>reject(new Error(e.error||"Falha na voz do aparelho"));speechSynthesis.speak(u);
+ });
+}
+async function speakAtlas(text){
+ if(!audioSettings.voiceEnabled)return;
+ const clean=String(text||"").trim();if(!clean)return;
+ stopAtlasSpeech();const run=atlasSpeechRun;
+ $("#atlasAudioStatus").textContent=audioSettings.voiceEngine==="ai"?"Preparando voz IA…":"ATLAS está falando…";
  try{
-  const AudioCtx=window.AudioContext||window.webkitAudioContext;
-  if(!AudioCtx)return;
-  audioContext=audioContext||new AudioCtx();
-  if(audioContext.state==="suspended")audioContext.resume();
-  const now=audioContext.currentTime;
-  const patterns={
-   click:[{f:620,d:.045,g:.035}],
-   navigation:[{f:440,d:.04,g:.025},{f:660,d:.06,g:.025,delay:.045}],
-   success:[{f:520,d:.07,g:.04},{f:780,d:.1,g:.035,delay:.075}],
-   error:[{f:260,d:.12,g:.035},{f:190,d:.14,g:.03,delay:.1}]
-  };
-  (patterns[type]||patterns.click).forEach(tone=>{
-   const osc=audioContext.createOscillator(),gain=audioContext.createGain();
-   const start=now+(tone.delay||0);
-   osc.type="sine";osc.frequency.setValueAtTime(tone.f,start);
-   gain.gain.setValueAtTime(.0001,start);
-   gain.gain.exponentialRampToValueAtTime(tone.g,start+.008);
-   gain.gain.exponentialRampToValueAtTime(.0001,start+tone.d);
-   osc.connect(gain);gain.connect(audioContext.destination);
-   osc.start(start);osc.stop(start+tone.d+.015);
-  });
- }catch(e){console.warn("Não foi possível reproduzir o som",e)}
+  if(audioSettings.voiceEngine==="ai"){
+   const chunks=splitAtlasSpeech(clean);
+   for(const chunk of chunks){if(run!==atlasSpeechRun)return;await fetchAtlasAIChunk(chunk,run)}
+  }else await speakAtlasDevice(clean);
+  if(run===atlasSpeechRun)$("#atlasAudioStatus").textContent="Fala concluída.";
+ }catch(error){
+  if(run!==atlasSpeechRun)return;
+  console.warn("Voz IA indisponível; usando voz do aparelho:",error);
+  $("#atlasAudioStatus").textContent="Voz IA indisponível ou limite gratuito atingido; usando voz do aparelho.";
+  try{stopAtlasSpeech();const fallbackRun=atlasSpeechRun;await speakAtlasDevice(clean);if(fallbackRun===atlasSpeechRun)$("#atlasAudioStatus").textContent="Fala concluída com a voz do aparelho."}
+  catch(fallbackError){if(run===atlasSpeechRun)$("#atlasAudioStatus").textContent="Não foi possível reproduzir a voz. Verifique a conexão ou as vozes do aparelho."}
+ }
 }
-function syncAudioControls(){
- $("#voiceEnabled").checked=audioSettings.voiceEnabled;
- $("#voiceRate").value=audioSettings.voiceRate;
- $("#voiceVolume").value=audioSettings.voiceVolume;
- $("#soundsEnabled").checked=audioSettings.soundsEnabled;
- $("#voiceRateValue").textContent=Number(audioSettings.voiceRate).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+"×";
- $("#voiceVolumeValue").textContent=Math.round(audioSettings.voiceVolume*100)+"%";
+function playAtlasSound(kind="click"){
+ if(!audioSettings.soundsEnabled||audioSettings.soundVolume<=0)return;
+ try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audioContext)audioContext=new AC();if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});
+ const sounds={click:{f:520,d:.045},navigate:{f:620,d:.065},success:{f:760,d:.11}},s=sounds[kind]||sounds.click,osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;
+ osc.type="sine";osc.frequency.setValueAtTime(s.f,now);gain.gain.setValueAtTime(Math.max(.0001,audioSettings.soundVolume*.12),now);gain.gain.exponentialRampToValueAtTime(.0001,now+s.d);osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+s.d)
+ }catch(e){console.warn("Erro no som",e)}
 }
-$("#voiceEnabled").addEventListener("change",e=>{audioSettings.voiceEnabled=e.target.checked;saveAudioSettings();if(!audioSettings.voiceEnabled)stopAtlasSpeech()});
-$("#atlasVoiceSelect").addEventListener("change",e=>{audioSettings.voiceName=e.target.value;saveAudioSettings()});
-$("#voiceRate").addEventListener("input",e=>{audioSettings.voiceRate=Number(e.target.value);syncAudioControls();saveAudioSettings()});
-$("#voiceVolume").addEventListener("input",e=>{audioSettings.voiceVolume=Number(e.target.value);syncAudioControls();saveAudioSettings()});
-$("#soundsEnabled").addEventListener("change",e=>{audioSettings.soundsEnabled=e.target.checked;saveAudioSettings();if(audioSettings.soundsEnabled)playAtlasSound("success")});
-$("#testVoice").addEventListener("click",()=>{
- if(!speechSupported){$("#atlasAudioStatus").textContent="Seu navegador não oferece síntese de voz.";return}
- if(!audioSettings.voiceEnabled){$("#atlasAudioStatus").textContent="Ative as respostas faladas para testar a voz.";return}
- speakAtlas("Olá. Eu sou o ATLAS. Esta é uma demonstração da voz selecionada.");
-});
-$("#stopVoice").addEventListener("click",()=>{stopAtlasSpeech();$("#atlasAudioStatus").textContent="Fala interrompida."});
-$("#testSound").addEventListener("click",()=>playAtlasSound("success"));
+$("#atlasVoiceEnabled").addEventListener("change",e=>{audioSettings.voiceEnabled=e.target.checked;saveAudioSettings();if(!audioSettings.voiceEnabled){stopAtlasSpeech();$("#atlasAudioStatus").textContent="Voz desativada."}else $("#atlasAudioStatus").textContent="Voz ativada para as próximas respostas."});
+$("#atlasSoundsEnabled").addEventListener("change",e=>{audioSettings.soundsEnabled=e.target.checked;saveAudioSettings();if(audioSettings.soundsEnabled){playAtlasSound("success");$("#atlasAudioStatus").textContent="Efeitos sonoros ativados."}else $("#atlasAudioStatus").textContent="Efeitos sonoros desativados."});
+$("#atlasVoiceSelect").addEventListener("change",e=>{audioSettings.voiceName=e.target.value;saveAudioSettings();$("#atlasAudioStatus").textContent="Preferência de voz salva."});
+$("#atlasVoiceEngine").addEventListener("change",e=>{audioSettings.voiceEngine=e.target.value==="device"?"device":"ai";saveAudioSettings();$("#atlasAudioStatus").textContent=audioSettings.voiceEngine==="ai"?"Voz IA Alex selecionada. Se falhar, será usada a voz do aparelho.":"Voz do aparelho selecionada."});
+$("#atlasVoiceVolume").addEventListener("input",e=>{audioSettings.voiceVolume=Number(e.target.value);saveAudioSettings()});
+$("#atlasVoiceRate").addEventListener("input",e=>{audioSettings.voiceRate=Number(e.target.value);saveAudioSettings()});
+$("#atlasSoundVolume").addEventListener("input",e=>{audioSettings.soundVolume=Number(e.target.value);saveAudioSettings()});
+$("#atlasTestVoice").addEventListener("click",()=>{audioSettings.voiceEnabled=true;$("#atlasVoiceEnabled").checked=true;saveAudioSettings();speakAtlas("Sistemas de áudio operacionais. Olá, sou o ATLAS. Como posso ajudar você?")});
+$("#atlasStopVoice").addEventListener("click",()=>{stopAtlasSpeech();$("#atlasAudioStatus").textContent="Fala interrompida."});
+$("#atlasTestSound").addEventListener("click",()=>{playAtlasSound("success");$("#atlasAudioStatus").textContent="Teste de som solicitado."});
 if(speechSupported){
  populateSpeechVoices();
- speechSynthesis.onvoiceschanged=populateSpeechVoices;
- setTimeout(populateSpeechVoices,500);
-}else $("#atlasAudioStatus").textContent="Este navegador não oferece síntese de voz.";
-syncAudioControls();
+ if("onvoiceschanged"in speechSynthesis)speechSynthesis.onvoiceschanged=populateSpeechVoices;
+}
+updateAudioControls();
+
+/* GRAVAÇÃO DE VOZ */
+const recordStart=$("#startVoiceRecording"),recordStop=$("#stopVoiceRecording"),recordStatus=$("#voiceRecordingStatus"),recordPlayer=$("#voiceRecordingPlayer"),recordDownload=$("#downloadVoiceRecording"),recordDelete=$("#deleteVoiceRecording"),recordName=$("#voiceRecordingName");
+let mediaRecorder=null,recordedChunks=[],recordedVoiceBlob=null,recordedVoiceUrl=null,recordingStream=null;
+function releaseRecordedVoiceUrl(){if(recordedVoiceUrl){URL.revokeObjectURL(recordedVoiceUrl);recordedVoiceUrl=null}}
+function resetVoiceRecording(){releaseRecordedVoiceUrl();recordedVoiceBlob=null;recordedChunks=[];recordPlayer.pause();recordPlayer.removeAttribute("src");recordPlayer.load();recordPlayer.classList.add("hidden");recordDownload.disabled=true;recordDelete.disabled=true}
+recordStart.addEventListener("click",async()=>{
+ if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){recordStatus.textContent="Este navegador não oferece suporte à gravação. Abra a ATLAS no Chrome usando HTTPS.";return}
+ if(mediaRecorder?.state==="recording")return;
+ try{
+  recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});recordedChunks=[];
+  const types=["audio/webm;codecs=opus","audio/webm","audio/mp4"],mimeType=types.find(t=>MediaRecorder.isTypeSupported(t));
+  mediaRecorder=mimeType?new MediaRecorder(recordingStream,{mimeType}):new MediaRecorder(recordingStream);
+  mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};
+  mediaRecorder.onstop=()=>{
+   const type=mediaRecorder.mimeType||"audio/webm",chunks=[...recordedChunks];
+   releaseRecordedVoiceUrl();recordedVoiceBlob=null;recordedChunks=[];
+   recordPlayer.pause();recordPlayer.removeAttribute("src");recordPlayer.load();recordPlayer.classList.add("hidden");recordDownload.disabled=true;recordDelete.disabled=true;
+   if(chunks.length){recordedVoiceBlob=new Blob(chunks,{type});if(recordedVoiceBlob.size>0){recordedVoiceUrl=URL.createObjectURL(recordedVoiceBlob);recordPlayer.src=recordedVoiceUrl;recordPlayer.classList.remove("hidden");recordDownload.disabled=false;recordDelete.disabled=false;recordStatus.textContent="Gravação pronta. Toque em reproduzir para ouvir."}else{recordedVoiceBlob=null;recordStatus.textContent="O áudio ficou vazio. Tente novamente."}}
+   else recordStatus.textContent="Nenhum áudio foi gravado. Tente novamente.";
+   if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}
+   recordStart.disabled=false;recordStop.disabled=true;
+  };
+  mediaRecorder.onerror=()=>{recordStatus.textContent="Erro durante a gravação.";if(mediaRecorder?.state==="recording")mediaRecorder.stop()};
+  mediaRecorder.start();recordStart.disabled=true;recordStop.disabled=false;recordStatus.textContent="Gravando... fale naturalmente e depois toque em Parar gravação."
+ }catch(error){if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}recordStatus.textContent=error.name==="NotAllowedError"?"Acesso ao microfone negado. Autorize o microfone nas permissões do navegador.":"Não foi possível iniciar a gravação. Verifique o microfone.";recordStart.disabled=false;recordStop.disabled=true}
+});
+recordStop.addEventListener("click",()=>{if(mediaRecorder?.state==="recording"){recordStop.disabled=true;recordStatus.textContent="Finalizando gravação...";mediaRecorder.stop()}});
+recordDownload.addEventListener("click",()=>{if(!recordedVoiceBlob||!recordedVoiceUrl)return;const name=(recordName.value.trim()||"minha-voz").replace(/[^a-zA-Z0-9À-ÿ_-]/g,"_"),ext=recordedVoiceBlob.type.includes("mp4")?"mp4":"webm",a=document.createElement("a");a.href=recordedVoiceUrl;a.download=`${name}.${ext}`;document.body.appendChild(a);a.click();a.remove();recordStatus.textContent="Download solicitado. Verifique a pasta de downloads."});
+recordDelete.addEventListener("click",()=>{if(recordedVoiceBlob&&confirm("Apagar esta gravação temporária?")){resetVoiceRecording();recordStatus.textContent="Gravação apagada."}});
+window.addEventListener("pagehide",()=>{if(mediaRecorder?.state==="recording")mediaRecorder.stop();if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null}});
 
 /* NAVEGAÇÃO */
-function showPage(id){
- $$(".page").forEach(p=>p.classList.toggle("hidden",p.id!==id));
- $$("nav button[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
- if(id==="chat")chatInput.focus({preventScroll:true});
- if(id==="briefing")renderBriefing();
- window.scrollTo({top:0,behavior:"smooth"});
-}
-$$("nav button[data-page]").forEach(b=>b.addEventListener("click",()=>{
- showPage(b.dataset.page);playAtlasSound("navigation");
-}));
-$$("[data-go]").forEach(b=>b.addEventListener("click",()=>{
- showPage(b.dataset.go);playAtlasSound("navigation");
-}));
+let chatBusy=false;
+function go(page){$$(".page").forEach(s=>s.classList.toggle("hidden",s.id!==page));$$("nav [data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));if(page==="briefing")renderBriefing();if(page==="chat"){renderChatHistory();if(!chatBusy)$("#chatInput").focus()}}
+$$("nav [data-page]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.page!==$(".page:not(.hidden)")?.id)playAtlasSound("navigate");go(b.dataset.page)}));
+$$("[data-go]").forEach(b=>b.addEventListener("click",()=>{playAtlasSound("navigate");go(b.dataset.go)}));
 
-/* DATAS, PRIORIDADES E FORMATAÇÃO */
-function dateLabel(date){
- if(!date)return"Sem prazo definido";
- const d=new Date(date+"T12:00:00");
- return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});
-}
-function priorityLabel(priority){
- return priority==="high"?"Alta":priority==="low"?"Baixa":"Média";
-}
-function dueStatus(task){
- if(!task.due)return{label:"Sem prazo",className:"normal",rank:3};
- const today=todayString();
- if(task.due<today)return{label:"Atrasada",className:"urgent",rank:0};
- if(task.due===today)return{label:"Para hoje",className:"urgent",rank:0};
- const next=new Date(today+"T12:00:00");
- next.setDate(next.getDate()+2);
- const soon=next.toISOString().slice(0,10);
- if(task.due<=soon)return{label:"Em breve",className:"soon",rank:1};
- return{label:dateLabel(task.due),className:"normal",rank:2};
-}
-function taskRank(task){
- const p=task.priority==="high"?0:task.priority==="medium"?1:2;
- const due=dueStatus(task).rank;
- return due*10+p;
-}
-function sortTasks(tasks){
- return [...tasks].sort((a,b)=>{
-  if(a.done!==b.done)return a.done?1:-1;
-  const rank=taskRank(a)-taskRank(b);
-  if(rank!==0)return rank;
-  if(a.due&&b.due&&a.due!==b.due)return a.due.localeCompare(b.due);
-  if(a.due&&!b.due)return-1;
-  if(!a.due&&b.due)return 1;
-  return String(a.createdAt||"").localeCompare(String(b.createdAt||""));
- });
-}
-function projectName(id){
- const p=db.projects.find(x=>x.id===id);
- return p?p.name:"Projeto removido";
-}
-function saveDB(){
- try{localStorage.setItem(DB_KEY,JSON.stringify(db));return true}
- catch(e){alert("Não foi possível salvar os dados neste navegador. Exporte um backup e verifique o espaço disponível.");console.error(e);return false}
-}
-function el(tag,className,text){
- const node=document.createElement(tag);
- if(className)node.className=className;
- if(text!==undefined)node.textContent=text;
- return node;
-}
-
-/* RENDERIZAÇÃO DO PAINEL */
 function renderDashboard(){
+ const pending=db.tasks.filter(t=>!t.done);
+ $("#statProjects").textContent=db.projects.length;$("#statTasks").textContent=pending.length;$("#statDone").textContent=db.tasks.filter(t=>t.done).length;$("#statMemory").textContent=db.memory.length;
  $("#welcomeDate").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
- $("#statProjects").textContent=db.projects.length;
- $("#statTasks").textContent=db.tasks.filter(t=>!t.done).length;
- $("#statDone").textContent=db.tasks.filter(t=>t.done).length;
- $("#statMemory").textContent=db.memory.length;
- const container=$("#dashboardTasks");container.replaceChildren();
- const tasks=sortTasks(db.tasks.filter(t=>!t.done)).slice(0,5);
- if(!tasks.length){container.append(el("p","muted","Nenhuma tarefa pendente. Aproveite para planejar a próxima etapa."));return}
- tasks.forEach(task=>{
-  const item=el("div","item");
-  const row=el("div","row");
-  const title=el("strong","",task.title);
-  const status=dueStatus(task);
-  const badge=el("span",`badge ${status.className}`,status.label);
-  row.append(title,badge);item.append(row);
-  const info=el("p","muted small",`${priorityLabel(task.priority)} · ${dateLabel(task.due)}${task.projectId?" · "+projectName(task.projectId):""}`);
-  info.style.marginTop="8px";item.append(info);container.append(item);
- });
-}
-
-/* PROJETOS */
-function renderProjectOptions(){
- const select=$("#taskProject"),current=select.value;
- select.replaceChildren();
- const empty=document.createElement("option");empty.value="";empty.textContent="Sem projeto";select.append(empty);
- db.projects.forEach(project=>{
-  const option=document.createElement("option");option.value=project.id;option.textContent=project.name;select.append(option);
- });
- if([...select.options].some(o=>o.value===current))select.value=current;
+ const sorted=[...pending].sort(compareTasks).slice(0,5);
+ $("#dashboardTasks").innerHTML=sorted.length?sorted.map(t=>`<div class="item"><div class="row"><strong>${esc(t.title)}</strong><span class="badge ${taskBadgeClass(t)}">${esc(priorityLabel(t.priority))}</span></div><p class="muted small">Prazo: ${esc(dateLabel(t.due))}</p><p class="muted small">${esc(taskRecommendation(t))}</p></div>`).join(""):'<p class="muted small">Nenhuma tarefa pendente. Tudo em ordem.</p>';
 }
 function renderProjects(){
- const list=$("#projectsList");list.replaceChildren();
- if(!db.projects.length){list.append(el("p","muted","Nenhum projeto cadastrado ainda."));renderProjectOptions();return}
- db.projects.forEach(project=>{
-  const card=el("div","item");
-  const row=el("div","row"),main=el("div","item-main");
-  main.append(el("strong","",project.name));
-  if(project.description)main.append(el("p","muted small",project.description));
-  const count=db.tasks.filter(t=>t.projectId===project.id&&!t.done).length;
-  const actions=el("div","actions");
-  const tasksButton=el("button","","Ver tarefas");
-  tasksButton.addEventListener("click",()=>{showPage("tasks");$("#taskProject").value=project.id;$("#taskFilter").value="open";renderTasks();});
-  const deleteButton=el("button","danger","Excluir");
-  deleteButton.addEventListener("click",()=>{
-   if(!confirm(`Excluir o projeto "${project.name}"? As tarefas associadas ficarão sem projeto.`))return;
-   db.projects=db.projects.filter(p=>p.id!==project.id);
-   db.tasks.forEach(t=>{if(t.projectId===project.id)t.projectId=""});
-   if(saveDB())render();
-  });
-  actions.append(tasksButton,deleteButton);row.append(main,el("span","badge",`${count} pendente(s)`));card.append(row);
-  if(project.description)card.append(el("p","muted small",project.description));
-  card.append(actions);list.append(card);
- });
- renderProjectOptions();
+ $("#projectsList").innerHTML=db.projects.length?db.projects.map(p=>`<div class="item"><div class="row"><div class="item-main"><strong>${esc(p.name)}</strong><p class="muted small">${esc(p.description||"Sem descrição")}</p></div><button class="danger" data-delete-project="${esc(p.id)}">Excluir</button></div></div>`).join(""):'<p class="muted">Nenhum projeto cadastrado.</p>';
+ const selected=$("#taskProject").value;
+ $("#taskProject").innerHTML='<option value="">Sem projeto</option>'+db.projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+ if(db.projects.some(p=>p.id===selected))$("#taskProject").value=selected;
 }
-$("#projectForm").addEventListener("submit",e=>{
- e.preventDefault();
- const name=$("#projectName").value.trim(),description=$("#projectDescription").value.trim();
- if(!name)return;
- if(db.projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){alert("Já existe um projeto com esse nome.");return}
- db.projects.push({id:uid(),name,description,createdAt:new Date().toISOString()});
- if(saveDB()){e.target.reset();render();playAtlasSound("success")}
-});
-
-/* TAREFAS */
 function renderTasks(){
- const list=$("#tasksList");list.replaceChildren();
- const filter=$("#taskFilter").value,projectFilter=$("#taskProject").value;
- let tasks=sortTasks(db.tasks);
- if(filter==="open")tasks=tasks.filter(t=>!t.done);
- if(filter==="done")tasks=tasks.filter(t=>t.done);
- if(projectFilter)tasks=tasks.filter(t=>t.projectId===projectFilter);
- if(!tasks.length){list.append(el("p","muted","Nenhuma tarefa encontrada para este filtro."));return}
- tasks.forEach(task=>{
-  const card=el("div",`item${task.done?" task-done":""}`);
-  const row=el("div","row"),main=el("div","item-main");
-  const check=document.createElement("input");check.type="checkbox";check.checked=!!task.done;check.setAttribute("aria-label",`Concluir ${task.title}`);
-  check.addEventListener("change",()=>{
-   task.done=check.checked;
-   task.completedAt=task.done?new Date().toISOString():"";
-   if(saveDB()){render();playAtlasSound(task.done?"success":"click")}
-  });
-  const title=el("strong","",task.title);main.append(title);
-  const meta=el("p","muted small",`${priorityLabel(task.priority)} · ${dateLabel(task.due)}${task.projectId?" · "+projectName(task.projectId):""}`);
-  meta.style.marginTop="6px";main.append(meta);
-  const status=dueStatus(task);const badge=el("span",`badge ${status.className}`,status.label);
-  const actions=el("div","actions");
-  const prioritySelect=document.createElement("select");prioritySelect.setAttribute("aria-label",`Prioridade de ${task.title}`);prioritySelect.style.width="auto";
-  [["high","Alta"],["medium","Média"],["low","Baixa"]].forEach(([value,label])=>{const o=document.createElement("option");o.value=value;o.textContent=label;prioritySelect.append(o)});
-  prioritySelect.value=task.priority||"medium";
-  prioritySelect.addEventListener("change",()=>{task.priority=prioritySelect.value;if(saveDB()){render();playAtlasSound("click")}});
-  const editButton=el("button","","Editar");
-  editButton.addEventListener("click",()=>{
-   const newTitle=prompt("Título da tarefa:",task.title);if(newTitle===null)return;
-   const trimmed=newTitle.trim();if(!trimmed){alert("O título não pode ficar vazio.");return}
-   const newDue=prompt("Prazo (AAAA-MM-DD) ou deixe vazio:",task.due||"");
-   if(newDue===null)return;
-   if(newDue&&!/^\d{4}-\d{2}-\d{2}$/.test(newDue)){alert("Use o formato AAAA-MM-DD para o prazo.");return}
-   task.title=trimmed.slice(0,150);task.due=newDue;
-   if(saveDB()){render();playAtlasSound("success")}
-  });
-  const deleteButton=el("button","danger","Excluir");
-  deleteButton.addEventListener("click",()=>{if(!confirm(`Excluir a tarefa "${task.title}"?`))return;db.tasks=db.tasks.filter(t=>t.id!==task.id);if(saveDB()){render();playAtlasSound("click")}});
-  actions.append(prioritySelect,editButton,deleteButton);
-  row.append(el("label","check-row",""));row.firstChild.append(check);row.firstChild.append(document.createTextNode("Concluída"));
-  row.append(main,badge);card.append(row,actions);list.append(card);
- });
+ const f=$("#taskFilter").value;let tasks=[...db.tasks];
+ if(f==="open")tasks=tasks.filter(t=>!t.done);if(f==="done")tasks=tasks.filter(t=>t.done);
+ tasks.sort((a,b)=>Number(a.done)-Number(b.done)||compareTasks(a,b));
+ $("#tasksList").innerHTML=tasks.length?tasks.map(t=>`<div class="item ${t.done?"task-done":""}"><div class="row"><label class="check-row item-main"><input type="checkbox" data-toggle-task="${esc(t.id)}" ${t.done?"checked":""}><strong>${esc(t.title)}</strong></label><button class="danger" data-delete-task="${esc(t.id)}">Excluir</button></div><p class="muted small">Prioridade inicial: ${esc(priorityLabel(t.priority))}</p><p class="muted small">Prazo: ${esc(dateLabel(t.due))} · Projeto: ${esc(projectName(t.projectId))}</p><p><span class="badge ${taskBadgeClass(t)}">${esc(taskRecommendation(t))}</span></p></div>`).join(""):'<p class="muted">Nenhuma tarefa nesta lista.</p>';
 }
-$("#taskFilter").addEventListener("change",renderTasks);
-$("#taskProject").addEventListener("change",renderTasks);
-$("#taskForm").addEventListener("submit",e=>{
- e.preventDefault();
- const title=$("#taskTitle").value.trim();if(!title)return;
- db.tasks.push({id:uid(),title:title.slice(0,150),priority:$("#taskPriority").value,due:$("#taskDue").value,projectId:$("#taskProject").value,done:false,createdAt:new Date().toISOString()});
- if(saveDB()){e.target.reset();$("#taskPriority").value="medium";render();playAtlasSound("success")}
-});
-
-/* MEMÓRIA LOCAL */
 function renderMemory(){
- const list=$("#memoryList");list.replaceChildren();
- if(!db.memory.length){list.append(el("p","muted","Nenhuma anotação salva."));return}
- [...db.memory].sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||""))).forEach(note=>{
-  const card=el("div","item"),row=el("div","row"),main=el("div","item-main");
-  main.append(el("strong","",note.title),el("p","muted small",new Date(note.createdAt||Date.now()).toLocaleString("pt-BR")));
-  const actions=el("div","actions");
-  const edit=el("button","","Editar");
-  edit.addEventListener("click",()=>{
-   const title=prompt("Título:",note.title);if(title===null)return;
-   const content=prompt("Conteúdo:",note.content);if(content===null)return;
-   if(!title.trim()||!content.trim()){alert("Preencha o título e o conteúdo.");return}
-   note.title=title.trim().slice(0,120);note.content=content.trim().slice(0,10000);
-   if(saveDB()){renderMemory();renderDashboard();playAtlasSound("success")}
-  });
-  const remove=el("button","danger","Excluir");
-  remove.addEventListener("click",()=>{if(!confirm(`Excluir a anotação "${note.title}"?`))return;db.memory=db.memory.filter(n=>n.id!==note.id);if(saveDB()){renderMemory();renderDashboard();playAtlasSound("click")}});
-  actions.append(edit,remove);row.append(main,actions);card.append(row,el("p","",""));card.lastChild.textContent=note.content;list.append(card);
- });
+ $("#memoryList").innerHTML=db.memory.length?[...db.memory].reverse().map(n=>`<div class="item"><div class="row"><strong>${esc(n.title)}</strong><button class="danger" data-delete-memory="${esc(n.id)}">Excluir</button></div><p>${esc(n.content).replace(/\n/g,"<br>")}</p><p class="muted small">Atualizada em ${esc(new Date(n.updatedAt).toLocaleString("pt-BR"))}</p></div>`).join(""):'<p class="muted">Nenhuma anotação salva.</p>';
 }
-$("#memoryForm").addEventListener("submit",e=>{
- e.preventDefault();
- const title=$("#memoryTitle").value.trim(),content=$("#memoryContent").value.trim();
- if(!title||!content)return;
- db.memory.push({id:uid(),title:title.slice(0,120),content:content.slice(0,10000),createdAt:new Date().toISOString()});
- if(saveDB()){e.target.reset();renderMemory();renderDashboard();playAtlasSound("success")}
+function renderBriefing(){
+ const open=db.tasks.filter(t=>!t.done),today=todayString(),sorted=[...open].sort(compareTasks);
+ const sections=[
+ {title:"Próximas prioridades",items:sorted.slice(0,5).map(t=>`${t.title} — ${taskRecommendation(t)}`)},
+ {title:"Prazos vencidos",items:sorted.filter(t=>t.due&&t.due<today).map(t=>`${t.title} — prazo ${dateLabel(t.due)}`)},
+ {title:"Prazos de hoje",items:sorted.filter(t=>t.due===today).map(t=>t.title)},
+ {title:"Prioridade inicial alta",items:sorted.filter(t=>t.priority==="high").map(t=>t.title)},
+ {title:"Projetos cadastrados",items:db.projects.map(p=>p.name)}
+ ];
+ $("#briefingTasks").innerHTML=sections.map(s=>`<div class="item"><strong>${esc(s.title)}</strong>${s.items.length?`<ul>${s.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:'<p class="muted small">Nenhum item identificado.</p>'}</div>`).join("");
+ try{$("#briefingNotes").value=JSON.parse(localStorage.getItem(BRIEFING_KEY)||"{}").notes||""}catch{$("#briefingNotes").value=""}
+}
+function render(){renderDashboard();renderProjects();renderTasks();renderMemory();renderBriefing()}
+
+/* FORMULÁRIOS */
+$("#projectForm").addEventListener("submit",e=>{e.preventDefault();const name=$("#projectName").value.trim();if(!name)return;db.projects.push({id:uid(),name,description:$("#projectDescription").value.trim(),createdAt:new Date().toISOString()});$("#projectForm").reset();saveDB();playAtlasSound("success")});
+$("#taskForm").addEventListener("submit",e=>{e.preventDefault();const title=$("#taskTitle").value.trim();if(!title)return;db.tasks.push({id:uid(),title,priority:$("#taskPriority").value,due:$("#taskDue").value,projectId:$("#taskProject").value,done:false,createdAt:new Date().toISOString()});$("#taskForm").reset();$("#taskPriority").value="medium";saveDB();playAtlasSound("success")});
+$("#memoryForm").addEventListener("submit",e=>{e.preventDefault();const title=$("#memoryTitle").value.trim(),content=$("#memoryContent").value.trim();if(!title||!content)return;db.memory.push({id:uid(),title,content,updatedAt:new Date().toISOString()});$("#memoryForm").reset();saveDB();playAtlasSound("success")});
+$("#taskFilter").addEventListener("change",renderTasks);
+$("#refreshBriefing").addEventListener("click",renderBriefing);
+$("#saveBriefingNotes").addEventListener("click",()=>{try{localStorage.setItem(BRIEFING_KEY,JSON.stringify({notes:$("#briefingNotes").value,updatedAt:new Date().toISOString()}));alert("Anotações do briefing salvas.");playAtlasSound("success")}catch{alert("Não foi possível salvar as anotações.")}});
+document.addEventListener("change",e=>{const id=e.target.dataset.toggleTask;if(!id)return;const task=db.tasks.find(t=>t.id===id);if(task){task.done=e.target.checked;saveDB();if(task.done)playAtlasSound("success")}});
+document.addEventListener("click",e=>{
+ const target=e.target;if(!(target instanceof Element))return;
+ const pb=target.closest("[data-delete-project]"),tb=target.closest("[data-delete-task]"),mb=target.closest("[data-delete-memory]");
+ const pid=pb?.dataset.deleteProject,tid=tb?.dataset.deleteTask,mid=mb?.dataset.deleteMemory;
+ if(pid&&confirm("Excluir este projeto?")){db.projects=db.projects.filter(x=>x.id!==pid);db.tasks.forEach(t=>{if(t.projectId===pid)t.projectId=""});saveDB()}
+ if(tid&&confirm("Excluir esta tarefa?")){db.tasks=db.tasks.filter(x=>x.id!==tid);saveDB()}
+ if(mid&&confirm("Excluir esta anotação?")){db.memory=db.memory.filter(x=>x.id!==mid);saveDB()}
 });
 
-/* BRIEFING DIÁRIO */
-function renderBriefing(){
- const content=$("#briefingContent");content.replaceChildren();
- const pending=sortTasks(db.tasks.filter(t=>!t.done));
- const overdue=pending.filter(t=>t.due&&t.due<todayString());
- const today=pending.filter(t=>t.due===todayString());
- const noDue=pending.filter(t=>!t.due);
- content.append(el("p","",`Você tem ${pending.length} tarefa(s) pendente(s), ${overdue.length} atrasada(s) e ${today.length} com prazo para hoje.`));
- const priority=pending.slice(0,5);
- if(priority.length){
-  content.append(el("h3","section","Prioridades sugeridas"));
-  const ul=document.createElement("ul");
-  priority.forEach(t=>{const li=document.createElement("li");li.textContent=`${t.title} — ${priorityLabel(t.priority)} — ${dateLabel(t.due)}`;ul.append(li)});
-  content.append(ul);
- }else content.append(el("p","muted","Você não tem tarefas pendentes. Bom momento para planejar."));
- if(noDue.length)content.append(el("p","muted small",`${noDue.length} tarefa(s) sem prazo definido.`));
- let saved={};try{saved=JSON.parse(localStorage.getItem(BRIEFING_KEY)||"{}")}catch{}
- $("#briefingNote").value=saved.date===todayString()?(saved.note||""):"";
-}
-$("#refreshBriefing").addEventListener("click",()=>{renderBriefing();playAtlasSound("click")});
-$("#saveBriefing").addEventListener("click",()=>{
- try{
-  localStorage.setItem(BRIEFING_KEY,JSON.stringify({date:todayString(),note:$("#briefingNote").value.trim()}));
-  $("#briefingStatus").textContent="Nota do dia salva.";playAtlasSound("success");
- }catch{$("#briefingStatus").textContent="Não foi possível salvar a nota neste navegador."}
+/* NOTIFICAÇÕES */
+$("#enableNotifications").addEventListener("click",async()=>{
+ const status=$("#notificationStatus");
+ if(!("Notification"in window)){status.textContent="Este navegador não oferece suporte a notificações.";return}
+ try{const p=await Notification.requestPermission();if(p==="granted"){status.textContent="Permissão concedida. Os avisos funcionam quando o ATLAS está aberto.";new Notification("ATLAS",{body:"Notificações ativadas. Seu briefing está disponível."})}else status.textContent="Permissão não concedida. Verifique as configurações do navegador."}catch{status.textContent="Não foi possível ativar notificações neste navegador."}
 });
 function notifyBriefingOnOpen(){
- let saved={};try{saved=JSON.parse(localStorage.getItem(BRIEFING_KEY)||"{}")}catch{}
- if(saved.date!==todayString()){
-  try{localStorage.setItem(BRIEFING_KEY,JSON.stringify({date:todayString(),note:""}))}catch{}
- }
-}
-function render(){
- renderDashboard();renderProjects();renderTasks();renderMemory();renderBriefing();
+ if(!("Notification"in window)||Notification.permission!=="granted")return;
+ const today=todayString();if(localStorage.getItem("atlas_last_briefing_notice")===today)return;
+ const pending=db.tasks.filter(t=>!t.done),urgent=pending.filter(t=>t.due&&t.due<=today).length;
+ try{new Notification("ATLAS — Briefing diário",{body:`${pending.length} tarefa(s) pendente(s). ${urgent} com prazo vencido ou para hoje.`});localStorage.setItem("atlas_last_briefing_notice",today)}catch{}
 }
 
 /* RECONHECIMENTO DE VOZ */
-const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(SpeechRecognition){
- recognition=new SpeechRecognition();
- recognition.lang="pt-BR";recognition.continuous=false;recognition.interimResults=true;
- recognition.onstart=()=>{voiceListening=true;voiceButton.classList.add("listening");voiceButton.textContent="⏹️";chatStatus.textContent="Estou ouvindo... Fale agora."};
- recognition.onresult=e=>{
-  let finalText="",interimText="";
-  for(let i=e.resultIndex;i<e.results.length;i++){
-   const text=e.results[i][0].transcript;
-   if(e.results[i].isFinal)finalText+=text;else interimText+=text;
-  }
-  if(finalText)chatInput.value=(chatInput.value+" "+finalText).trim();
-  else if(interimText)chatStatus.textContent="Reconhecendo: "+interimText;
- };
- recognition.onerror=e=>{chatStatus.textContent=e.error==="not-allowed"?"Permita o acesso ao microfone nas configurações do navegador.":"Não consegui reconhecer a fala. Tente novamente.";playAtlasSound("error")};
- recognition.onend=()=>{voiceListening=false;voiceButton.classList.remove("listening");voiceButton.textContent="🎙️";if(!chatBusy&&chatInput.value.trim())chatStatus.textContent="Fala reconhecida. Revise e envie sua mensagem."};
-}else{
- voiceButton.disabled=true;
- voiceButton.title="Reconhecimento de voz indisponível neste navegador";
-}
-voiceButton.addEventListener("click",()=>{
- if(!recognition){chatStatus.textContent="Seu navegador não oferece reconhecimento de voz compatível.";return}
- if(chatBusy)return;
- if(voiceListening){recognition.stop();return}
- try{recognition.start()}catch{chatStatus.textContent="Não foi possível iniciar o microfone. Tente novamente."}
-});
+const chatMessages=$("#chatMessages"),chatForm=$("#chatForm"),chatInput=$("#chatInput"),chatSend=$("#chatSend"),chatStatus=$("#chatStatus"),clearChatButton=$("#clearChat"),voiceButton=$("#voiceButton");
+const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition=null,voiceListening=false,voiceFinalTranscript="",voiceInterimTranscript="";
+if(SpeechRecognitionAPI){
+ recognition=new SpeechRecognitionAPI();recognition.lang="pt-BR";recognition.continuous=false;recognition.interimResults=true;recognition.maxAlternatives=1;
+ recognition.onstart=()=>{voiceListening=true;voiceFinalTranscript="";voiceInterimTranscript="";voiceButton.classList.add("listening");voiceButton.textContent="🔴";voiceButton.setAttribute("aria-label","Parar reconhecimento");chatStatus.textContent="Estou ouvindo...";playAtlasSound("click")};
+ recognition.onresult=e=>{voiceFinalTranscript="";voiceInterimTranscript="";for(let i=0;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)voiceFinalTranscript+=r[0].transcript+" ";else voiceInterimTranscript+=r[0].transcript}const t=(voiceFinalTranscript+voiceInterimTranscript).trim();if(t)chatInput.value=t};
+ recognition.onerror=e=>{const m={"not-allowed":"Permita o acesso ao microfone nas configurações do navegador.","service-not-allowed":"O serviço de reconhecimento não está permitido.","no-speech":"Nenhuma fala foi detectada. Tente novamente.","audio-capture":"Não foi possível acessar o microfone.","network":"Falha de rede durante o reconhecimento.","aborted":"Reconhecimento de voz interrompido."};chatStatus.textContent=m[e.error]||"O reconhecimento de voz encontrou um erro."};
+ recognition.onend=()=>{voiceListening=false;voiceButton.classList.remove("listening");voiceButton.textContent="🎙️";voiceButton.setAttribute("aria-label","Falar com o ATLAS");if(voiceFinalTranscript.trim()){chatInput.value=voiceFinalTranscript.trim();chatStatus.textContent="Fala reconhecida. Revise o texto e envie."}else if(voiceInterimTranscript.trim()){chatInput.value=voiceInterimTranscript.trim();chatStatus.textContent="Texto parcial reconhecido. Revise antes de enviar."}else if(chatStatus.textContent==="Estou ouvindo...")chatStatus.textContent="Nenhuma fala reconhecida. Tente novamente.";voiceButton.disabled=chatBusy||!recognition}
+}else{voiceButton.disabled=true;voiceButton.title="Reconhecimento de voz indisponível neste navegador"}
+voiceButton.addEventListener("click",()=>{if(!recognition){chatStatus.textContent="Seu navegador não oferece reconhecimento de voz compatível.";return}if(chatBusy)return;if(voiceListening){recognition.stop();return}try{recognition.start()}catch{chatStatus.textContent="Não foi possível iniciar o microfone. Tente novamente."}});
 
 /* COMANDOS LOCAIS DE TAREFAS */
 function normalizeText(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[.,!?;:]/g," ").replace(/\s+/g," ").trim()}
